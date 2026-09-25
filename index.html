@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chigüire Integral — La selva de las integrales</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --selva:#1E6B3A;--selva-2:#134D29;--hoja:#54B84A;--madera:#C98B3E;
+  --cielo:#3FB6C9;--naranja:#F2762B;--tinta:#16221B;--hueso:#FFF3D6;
+  --rojo:#E03A2B;--ambar:#FFC12E;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Barlow',system-ui,sans-serif;color:var(--tinta);background:var(--selva-2);font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2{font-family:'Archivo Black',Impact,sans-serif;font-weight:400;line-height:1.02;margin:0}
+button{font-family:inherit;font-size:1rem;cursor:pointer;border:none}
+input,select{font-family:inherit;font-size:1rem}
+:focus-visible{outline:3px solid var(--ambar);outline-offset:2px}
+.pantalla{display:none;min-height:100vh}
+.pantalla.activa{display:block}
+
+#registro{background:linear-gradient(175deg,#F2762B 0%,#FFC12E 30%,#3FB6C9 31%,#1E6B3A 100%);place-items:center;padding:32px 20px}
+#registro.activa{display:grid}
+.tarjeta{width:min(800px,100%);background:var(--hueso);border:5px solid var(--tinta);border-radius:18px;box-shadow:0 16px 0 rgba(19,45,29,.45);overflow:hidden}
+.franja{background:var(--selva);color:var(--hueso);padding:24px 28px;border-bottom:5px solid var(--tinta)}
+.franja h1{font-size:clamp(2rem,7vw,3.3rem);color:var(--ambar);text-shadow:0 4px 0 var(--tinta)}
+.franja p{margin:.5rem 0 0;color:#D8F0DC;max-width:56ch}
+.cuerpo{padding:26px 28px 30px}
+.campo{margin-bottom:18px}
+.campo label{display:block;font-weight:700;margin-bottom:5px}
+.campo input,.campo select{width:100%;padding:12px 13px;border:3px solid var(--tinta);background:#fff;border-radius:10px}
+.fila{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.ramas{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rama-op{border:3px solid var(--tinta);background:#fff;border-radius:12px;padding:14px 16px;text-align:left}
+.rama-op b{display:block;font-family:'Archivo Black';font-size:1.05rem;margin-bottom:3px}
+.rama-op span{font-size:.9rem;color:#46543F}
+.rama-op[aria-pressed="true"]{background:var(--ambar);box-shadow:0 5px 0 var(--tinta)}
+.btn-grande{width:100%;margin-top:8px;background:var(--naranja);color:#fff;font-family:'Archivo Black';font-size:1.3rem;padding:16px;border:4px solid var(--tinta);border-radius:14px;box-shadow:0 7px 0 var(--tinta)}
+.btn-grande:active{transform:translateY(4px);box-shadow:0 3px 0 var(--tinta)}
+.aviso{color:var(--rojo);font-weight:700;min-height:1.4em;margin-top:8px}
+.reglas{margin-top:22px;padding-top:18px;border-top:3px dashed #D8C49A;font-size:.93rem;color:#3E4A3C}
+.reglas ul{margin:.5rem 0 .8rem;padding-left:1.1rem}
+.reglas li{margin-bottom:.35rem}
+.reglas b.tit{display:block;margin-top:.9rem}
+kbd{background:var(--tinta);color:var(--hueso);border-radius:5px;padding:1px 7px;font-size:.85em;font-weight:700}
+
+#juego{background:var(--selva-2);padding-bottom:40px}
+.hud{background:var(--selva);color:var(--hueso);display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding:12px 20px;border-bottom:5px solid var(--ambar)}
+.hud .dato{display:flex;flex-direction:column;line-height:1.15}
+.hud .dato small{font-size:.72rem;color:#A8D3B0;font-weight:700}
+.hud .dato strong{font-family:'Archivo Black';font-size:1.15rem;font-variant-numeric:tabular-nums}
+.hud .crece{flex:1}
+#reloj.alerta{color:var(--ambar)}
+#hud-mangos.baja{color:var(--rojo)}
+.vidas{display:flex;gap:6px;margin-top:3px}
+.vida{width:16px;height:16px;border-radius:50%;background:var(--hoja);border:2px solid var(--hueso)}
+.vida.perdida{background:transparent;border-color:#4A7A55}
+.btn-audio{background:transparent;color:var(--hueso);border:2px solid #4A7A55;border-radius:8px;padding:7px 12px;font-weight:700}
+.btn-audio.mudo{color:#7FA98A}
+
+.mundo{position:relative;max-width:1100px;margin:0 auto;background:#000}
+#lienzo3d{display:block;width:100%}
+.capa{position:absolute;inset:0;pointer-events:none}
+.vineta{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 88% at 50% 42%,rgba(0,0,0,0) 52%,rgba(10,26,20,.38) 100%);}
+.rotulo{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(22,34,27,.8);color:var(--hueso);padding:6px 16px;border-radius:20px;font-weight:700;font-size:.86rem;text-align:center}
+#mapa{position:absolute;top:12px;right:12px;border:3px solid rgba(255,243,214,.9);border-radius:10px;background:rgba(19,45,29,.75)}
+.pedir{position:absolute;bottom:86px;left:50%;transform:translateX(-50%);background:var(--ambar);color:var(--tinta);font-family:'Archivo Black';padding:8px 18px;border-radius:20px;border:3px solid var(--tinta);opacity:0;transition:opacity .15s}
+.pedir.ver{opacity:1}
+.grito{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%) scale(.7);font-family:'Archivo Black';font-size:clamp(1.4rem,4.5vw,2.6rem);color:#fff;text-shadow:0 5px 0 var(--tinta);opacity:0;transition:opacity .18s,transform .18s;text-align:center}
+.grito.ver{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.flash{position:absolute;inset:0;background:var(--rojo);opacity:0;transition:opacity .12s}
+.flash.on{opacity:.3}
+.mandos{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 14px;pointer-events:none}
+.mandos .grupo{display:flex;gap:8px;align-items:flex-end}
+.mandos button{pointer-events:auto;width:70px;height:58px;border-radius:14px;border:4px solid rgba(255,255,255,.85);background:rgba(22,34,27,.45);color:#fff;font-size:1.4rem;font-family:'Archivo Black'}
+.mandos button:active{background:var(--ambar);color:var(--tinta)}
+
+.panel{max-width:1100px;margin:18px auto 0;background:var(--hueso);border:5px solid var(--tinta);border-radius:16px;overflow:hidden;display:none}
+.panel.abierto{display:block}
+.panel-cab{background:var(--selva);color:var(--hueso);padding:12px 20px;display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.panel-cab strong{font-family:'Archivo Black';font-size:1.05rem}
+.panel-cab span{font-size:.86rem;color:#A8D3B0}
+.panel-cuerpo{padding:22px 24px 24px}
+.enunciado{background:#fff;border:3px solid var(--tinta);border-left:10px solid var(--ambar);border-radius:10px;padding:18px 16px;margin-bottom:18px;overflow-x:auto;text-align:center}
+.instruccion{font-weight:700;margin-bottom:12px}
+.coefs{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:16px}
+.coef{display:flex;align-items:center;gap:8px}
+.coef label{font-family:'Archivo Black';font-size:1.3rem}
+.coef input{width:140px;padding:11px 12px;border:3px solid var(--tinta);border-radius:10px;text-align:center;font-size:1.05rem}
+.opciones{display:grid;gap:10px;margin-bottom:18px}
+.opcion{display:flex;align-items:center;gap:12px;background:#fff;border:3px solid var(--tinta);border-radius:10px;padding:12px 14px;text-align:left}
+.opcion[aria-pressed="true"]{background:var(--ambar)}
+.opcion .letra{font-family:'Archivo Black';width:24px}
+.acciones{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.btn{background:var(--selva);color:#fff;font-weight:700;padding:13px 26px;border:3px solid var(--tinta);border-radius:12px;box-shadow:0 5px 0 var(--tinta)}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--tinta)}
+.btn.secundario{background:var(--madera);color:var(--tinta)}
+.ayuda{font-size:.88rem;color:#46543F}
+.veredicto{display:none;margin-top:18px;border:3px solid var(--tinta);border-radius:12px;overflow:hidden}
+.veredicto.abierto{display:block}
+.veredicto .cab{padding:12px 18px;font-family:'Archivo Black';font-size:1.15rem;color:#fff}
+.veredicto.bien .cab{background:var(--selva)}
+.veredicto.mal .cab{background:var(--rojo)}
+.veredicto .txt{background:#fff;padding:16px 18px}
+.veredicto .txt p{margin:.2rem 0 .8rem}
+.mate{overflow-x:auto;padding:6px 0}
+.contador-frenazo{font-weight:700;color:var(--rojo)}
+
+#final{background:linear-gradient(180deg,var(--selva) 0 60%,var(--selva-2) 60% 100%);padding:40px 20px}
+#final.activa{display:block}
+.resumen{width:min(720px,100%);margin:0 auto}
+.resumen h2{color:var(--ambar);font-size:clamp(1.8rem,5vw,2.6rem);margin-bottom:6px;text-shadow:0 4px 0 var(--tinta)}
+.resumen .sub{color:#C7E6CE;margin-bottom:22px}
+.marco{background:var(--hueso);border:5px solid var(--ambar);border-radius:16px;padding:24px}
+.puntaje{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+.puntaje .n{font-family:'Archivo Black';font-size:4rem;line-height:1;color:var(--naranja)}
+.puntaje .de{font-weight:700;color:#46543F}
+.tabla{width:100%;border-collapse:collapse;margin:16px 0}
+.tabla th,.tabla td{text-align:left;padding:8px 6px;border-bottom:2px solid #E0CFA6;font-size:.94rem}
+.tabla th{font-size:.78rem;color:#46543F;font-weight:700}
+.codigo{background:var(--tinta);color:var(--ambar);font-family:ui-monospace,monospace;font-size:1.3rem;letter-spacing:.14em;padding:14px;text-align:center;border-radius:10px;word-break:break-all}
+@media (max-width:640px){.fila,.ramas{grid-template-columns:1fr}.hud{gap:8px 12px;padding:10px 14px}.mandos button{width:58px;height:52px;font-size:1.1rem}#mapa{width:110px;height:110px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<section id="registro" class="pantalla activa">
+  <div class="tarjeta">
+    <div class="franja">
+      <h1>Chigüire Integral</h1>
+      <p>Eres un chigüire suelto en la selva. Nadie te empuja: caminas a tu ritmo, escoges por cuál sendero meterte y buscas las cinco cajas escondidas. Cada caja es una integral.</p>
+    </div>
+    <div class="cuerpo">
+      <div class="fila">
+        <div class="campo"><label for="nombre">Tu nombre y apellido</label>
+          <input id="nombre" type="text" placeholder="Ej. María Rodríguez" autocomplete="name"></div>
+        <div class="campo"><label for="equipo">Equipo</label>
+          <select id="equipo"><option value="">Elige tu equipo</option></select></div>
+      </div>
+      <div class="campo">
+        <label>¿Qué tramo te tocó dentro del equipo?</label>
+        <div class="ramas">
+          <button class="rama-op" data-rama="A" aria-pressed="false"><b>Tramo A</b><span>Fracciones parciales</span></button>
+          <button class="rama-op" data-rama="B" aria-pressed="false"><b>Tramo B</b><span>Sustitución trigonométrica</span></button>
+        </div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label for="minutos">Duración de la sesión</label>
+          <select id="minutos">
+            <option value="20">20 minutos</option><option value="30">30 minutos</option>
+            <option value="40" selected>40 minutos</option><option value="60">60 minutos</option>
+            <option value="80">80 minutos</option>
+          </select></div>
+        <div class="campo"><label for="calidad">Calidad gráfica</label>
+          <select id="calidad"><option value="alta" selected>Alta</option><option value="baja">Baja (equipos lentos)</option></select></div>
+      </div>
+      <button class="btn-grande" id="arrancar">Entrar a la selva</button>
+      <p class="aviso" id="aviso"></p>
+      <div class="reglas">
+        <b class="tit">Cómo se mueve</b>
+        <ul>
+          <li><kbd>↑</kbd> caminar, <kbd>↓</kbd> retroceder, <kbd>←</kbd> <kbd>→</kbd> girar. Con <kbd>Shift</kbd> corres.</li>
+          <li><kbd>espacio</kbd> saltar, <kbd>X</kbd> dar vueltas: con el giro rompes cajitas y espantas avispas.</li>
+          <li>En tableta, los botones de la pantalla hacen lo mismo.</li>
+          <li>El mapa de la esquina muestra dónde estás y dónde hay cajas grandes. Los senderos se bifurcan: escoge tú por dónde.</li>
+        </ul>
+        <b class="tit">Los dos marcadores — esto es importante</b>
+        <ul>
+          <li><b>Puntos de evaluación:</b> salen <u>solo</u> de resolver integrales. Son 1, 1, 2, 3 y 4 según la caja, máximo 11. Ningún obstáculo te los quita.</li>
+          <li><b>Mangos:</b> es tu puntaje de expedición. Los recoges por la selva y los pierdes al tropezar. Son los que se te van con los obstáculos.</li>
+        </ul>
+        <b class="tit">Los obstáculos</b>
+        <ul>
+          <li><b>Avispas:</b> si te acercas mucho te persiguen un trecho, pero son más lentas que tú: caminando te les escapas. Picadura: −5 mangos. Con el giro las espantas y se van a su sitio.</li>
+          <li><b>Barriles y troncos:</b> chocarlos cuesta −3 mangos. Se saltan o se rodean.</li>
+          <li><b>Barrizales:</b> te frenan y te cuestan −1 mango mientras estés metido.</li>
+          <li>Ninguno de ellos te quita vidas ni te saca del juego. Solo mangos.</li>
+        </ul>
+        <b class="tit">Las cajas de integrales</b>
+        <ul>
+          <li>Cinco cajas repartidas por el mapa. Las abres en el orden que quieras: acércate y pulsa <kbd>X</kbd>.</li>
+          <li>Un solo intento por caja. Si fallas, pierdes esos puntos, quedas aturdido 8 segundos y ves la solución explicada.</li>
+          <li>Si una integral no la ves clara, pulsa <b>Dejarla para después</b>: la caja se queda intacta, te vas a buscar otra y vuelves cuando quieras. No gastas el intento ni pierdes nada.</li>
+          <li>En el mapa las cajas se ven <b>amarillas</b> si están pendientes, <b>verdes</b> si las resolviste y <b>rojas</b> si las fallaste. En el terreno, la fallada deja unas tablas rotas con banderín rojo.</li>
+          <li>Tres aturdimientos. Al tercero tu equipo recibe penalización, pero tú sigues explorando.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="juego" class="pantalla">
+  <div class="hud">
+    <div class="dato"><small>Explorador</small><strong id="hud-nombre">—</strong></div>
+    <div class="dato"><small>Equipo</small><strong id="hud-equipo">—</strong></div>
+    <div class="dato crece"><small>Aturdimientos disponibles</small>
+      <div class="vidas" id="hud-vidas"><span class="vida"></span><span class="vida"></span><span class="vida"></span></div></div>
+    <div class="dato"><small>Cajas abiertas</small><strong id="hud-cajas">0 / 5</strong></div>
+    <div class="dato"><small>Mangos</small><strong id="hud-mangos">0</strong></div>
+    <div class="dato"><small>Puntos evaluación</small><strong id="hud-puntos">0</strong></div>
+    <div class="dato"><small>Tiempo</small><strong id="reloj">40:00</strong></div>
+    <button class="btn-audio" id="btn-audio" aria-pressed="true">Sonido</button>
+    <button class="btn-audio" id="btn-musica" aria-pressed="true">Música</button>
+  </div>
+
+  <div class="mundo" id="mundo">
+    <canvas id="lienzo3d"></canvas>
+    <div class="capa">
+      <div class="vineta"></div>
+      <div class="rotulo" id="rotulo">Busca las cinco cajas</div>
+      <canvas id="mapa" width="150" height="150"></canvas>
+      <div class="flash" id="flash"></div>
+      <div class="grito" id="grito"></div>
+      <div class="pedir" id="pedir">Pulsa X para abrir la caja</div>
+      <div class="mandos">
+        <div class="grupo">
+          <button id="btn-izq" aria-label="Girar a la izquierda">↰</button>
+          <button id="btn-adel" aria-label="Caminar">▲</button>
+          <button id="btn-atras" aria-label="Retroceder">▼</button>
+          <button id="btn-der" aria-label="Girar a la derecha">↱</button>
+        </div>
+        <div class="grupo">
+          <button id="btn-giro" aria-label="Girar sobre sí mismo">✷</button>
+          <button id="btn-salto" aria-label="Saltar">⤒</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="panel-cab"><strong id="panel-titulo">Caja</strong><span id="panel-valor">Vale 1 punto</span></div>
+    <div class="panel-cuerpo">
+      <div class="enunciado" id="enunciado"></div>
+      <p class="instruccion" id="instruccion"></p>
+      <div class="opciones" id="opciones"></div>
+      <div class="coefs" id="coefs"></div>
+      <div class="acciones"><button class="btn" id="responder">Responder</button><button class="btn secundario" id="dejar">Dejarla para después</button><span class="ayuda" id="ayuda"></span></div>
+      <div class="veredicto" id="veredicto">
+        <div class="cab" id="veredicto-cab"></div>
+        <div class="txt">
+          <div id="veredicto-txt"></div>
+          <div class="mate" id="veredicto-mate"></div>
+          <button class="btn secundario" id="seguir" style="display:none">Continuar</button>
+          <p class="contador-frenazo" id="cuenta-frenazo"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="final" class="pantalla">
+  <div class="resumen">
+    <h2 id="final-titulo">Expedición terminada</h2>
+    <p class="sub" id="final-sub"></p>
+    <div class="marco">
+      <div class="puntaje"><span class="n" id="final-puntos">0</span><span class="de">de 11 puntos posibles en tu tramo</span></div>
+      <table class="tabla">
+        <thead><tr><th>Caja</th><th>Método</th><th>Resultado</th><th>Puntos</th></tr></thead>
+        <tbody id="final-tabla"></tbody>
+      </table>
+      <p style="font-weight:700;margin-bottom:8px">Código de cierre — dícteselo al profesor</p>
+      <div class="codigo" id="final-codigo"></div>
+      <p class="ayuda" style="margin-top:14px" id="final-nota"></p>
+    </div>
+  </div>
+</section>
+
+<script>
+const BANCO = {
+A:[
+ // ---- Nivel 1 (1 pt) — factores lineales distintos
+ [
+  {tipo:"coef",tex:"\\frac{x+3}{x^{2}-3x+2}=\\frac{A}{x-1}+\\frac{B}{x-2}",campos:["A","B"],resp:[-4,5],
+   sol:"Factoriza x^{2}-3x+2=(x-1)(x-2). Con x=1 obtienes A=-4; con x=2 obtienes B=5.",
+   solTex:"\\int\\frac{x+3}{x^{2}-3x+2}dx=-4\\ln|x-1|+5\\ln|x-2|+C"},
+  {tipo:"coef",tex:"\\frac{2x-1}{x^{2}-x-6}=\\frac{A}{x-3}+\\frac{B}{x+2}",campos:["A","B"],resp:[1,1],
+   sol:"x^{2}-x-6=(x-3)(x+2). Evalúa en x=3 y en x=-2.",
+   solTex:"\\int\\frac{2x-1}{x^{2}-x-6}dx=\\ln|x-3|+\\ln|x+2|+C"},
+  {tipo:"coef",tex:"\\frac{x+7}{x^{2}+x-6}=\\frac{A}{x-2}+\\frac{B}{x+3}",campos:["A","B"],resp:[9/5,-4/5],
+   sol:"x^{2}+x-6=(x-2)(x+3). En x=2: 9=5A. En x=-3: 4=-5B.",
+   solTex:"A=\\tfrac{9}{5},\\quad B=-\\tfrac{4}{5}"},
+  {tipo:"coef",tex:"\\frac{3x+5}{x^{2}-1}=\\frac{A}{x-1}+\\frac{B}{x+1}",campos:["A","B"],resp:[4,-1],
+   sol:"En x=1: 8=2A. En x=-1: 2=-2B.",
+   solTex:"\\int\\frac{3x+5}{x^{2}-1}dx=4\\ln|x-1|-\\ln|x+1|+C"},
+  {tipo:"coef",tex:"\\frac{5x-4}{x^{2}-x-2}=\\frac{A}{x-2}+\\frac{B}{x+1}",campos:["A","B"],resp:[2,3],
+   sol:"x^{2}-x-2=(x-2)(x+1). En x=2: 6=3A. En x=-1: -9=-3B.",
+   solTex:"\\int\\frac{5x-4}{x^{2}-x-2}dx=2\\ln|x-2|+3\\ln|x+1|+C"},
+  {tipo:"coef",tex:"\\frac{x-9}{x^{2}+3x-10}=\\frac{A}{x-2}+\\frac{B}{x+5}",campos:["A","B"],resp:[-1,2],
+   sol:"x^{2}+3x-10=(x-2)(x+5). En x=2: -7=7A. En x=-5: -14=-7B.",
+   solTex:"\\int\\frac{x-9}{x^{2}+3x-10}dx=-\\ln|x-2|+2\\ln|x+5|+C"}
+ ],
+ // ---- Nivel 2 (1 pt) — factor lineal repetido
+ [
+  {tipo:"coef",tex:"\\frac{x^{2}+2}{x(x-1)^{2}}=\\frac{A}{x}+\\frac{B}{x-1}+\\frac{C}{(x-1)^{2}}",campos:["A","B","C"],resp:[2,-1,3],
+   sol:"En x=0 sale A=2; en x=1 sale C=3; el coeficiente de x^{2} da A+B=1.",
+   solTex:"2\\ln|x|-\\ln|x-1|-\\frac{3}{x-1}+C"},
+  {tipo:"coef",tex:"\\frac{3x+1}{x(x+1)^{2}}=\\frac{A}{x}+\\frac{B}{x+1}+\\frac{C}{(x+1)^{2}}",campos:["A","B","C"],resp:[1,-1,2],
+   sol:"En x=0: A=1. En x=-1: -2=-C, luego C=2. Coeficiente de x^{2}: A+B=0.",
+   solTex:"\\ln|x|-\\ln|x+1|-\\frac{2}{x+1}+C"},
+  {tipo:"coef",tex:"\\frac{x^{2}-x+1}{x^{2}(x-1)}=\\frac{A}{x-1}+\\frac{B}{x}+\\frac{C}{x^{2}}",campos:["A","B","C"],resp:[1,0,-1],
+   sol:"En x=1: A=1. En x=0: 1=-C, luego C=-1. Coeficiente de x^{2}: A+B=1.",
+   solTex:"\\ln|x-1|+\\frac{1}{x}+C"},
+  {tipo:"coef",tex:"\\frac{2x+3}{(x-2)^{2}(x+1)}=\\frac{A}{x+1}+\\frac{B}{x-2}+\\frac{C}{(x-2)^{2}}",campos:["A","B","C"],resp:[1/9,-1/9,7/3],
+   sol:"En x=-1: 1=9A. En x=2: 7=3C. El coeficiente de x^{2} obliga A+B=0.",
+   solTex:"A=\\tfrac{1}{9},\\quad B=-\\tfrac{1}{9},\\quad C=\\tfrac{7}{3}"},
+  {tipo:"coef",tex:"\\frac{x+4}{x(x-2)^{2}}=\\frac{A}{x}+\\frac{B}{x-2}+\\frac{C}{(x-2)^{2}}",campos:["A","B","C"],resp:[1,-1,3],
+   sol:"En x=0: 4=4A. En x=2: 6=2C. Coeficiente de x^{2}: A+B=0.",
+   solTex:"\\ln|x|-\\ln|x-2|-\\frac{3}{x-2}+C"},
+  {tipo:"coef",tex:"\\frac{4x-2}{(x+3)^{2}(x-1)}=\\frac{A}{x-1}+\\frac{B}{x+3}+\\frac{C}{(x+3)^{2}}",campos:["A","B","C"],resp:[1/8,-1/8,7/2],
+   sol:"En x=1: 2=16A. En x=-3: -14=-4C. Coeficiente de x^{2}: A+B=0.",
+   solTex:"A=\\tfrac{1}{8},\\quad B=-\\tfrac{1}{8},\\quad C=\\tfrac{7}{2}"}
+ ],
+ // ---- Nivel 3 (2 pts) — cuadrático irreducible
+ [
+  {tipo:"coef",tex:"\\frac{x^{2}+x+1}{(x+1)(x^{2}+1)}=\\frac{A}{x+1}+\\frac{Bx+C}{x^{2}+1}",campos:["A","B","C"],resp:[1/2,1/2,1/2],
+   sol:"En x=-1: 1=2A. Igualando coeficientes de x^{2} y del término independiente salen B y C.",
+   solTex:"\\tfrac12\\ln|x+1|+\\tfrac14\\ln(x^{2}+1)+\\tfrac12\\arctan x+C"},
+  {tipo:"coef",tex:"\\frac{2x^{2}+x+3}{(x-1)(x^{2}+2)}=\\frac{A}{x-1}+\\frac{Bx+C}{x^{2}+2}",campos:["A","B","C"],resp:[2,0,1],
+   sol:"En x=1: 6=3A. Coeficiente de x^{2}: A+B=2, luego B=0.",
+   solTex:"2\\ln|x-1|+\\tfrac{1}{\\sqrt2}\\arctan\\tfrac{x}{\\sqrt2}+C"},
+  {tipo:"coef",tex:"\\frac{x^{2}+3}{x(x^{2}+1)}=\\frac{A}{x}+\\frac{Bx+C}{x^{2}+1}",campos:["A","B","C"],resp:[3,-2,0],
+   sol:"En x=0: 3=A. Coeficiente de x^{2}: A+B=1. No hay término en x, así que C=0.",
+   solTex:"3\\ln|x|-\\ln(x^{2}+1)+C"},
+  {tipo:"coef",tex:"\\frac{3x}{(x+2)(x^{2}+1)}=\\frac{A}{x+2}+\\frac{Bx+C}{x^{2}+1}",campos:["A","B","C"],resp:[-6/5,6/5,3/5],
+   sol:"En x=-2: -6=5A. Luego iguala coeficientes de x^{2} y del independiente.",
+   solTex:"A=-\\tfrac65,\\quad B=\\tfrac65,\\quad C=\\tfrac35"},
+  {tipo:"coef",tex:"\\frac{x^{2}-2}{(x-1)(x^{2}+4)}=\\frac{A}{x-1}+\\frac{Bx+C}{x^{2}+4}",campos:["A","B","C"],resp:[-1/5,6/5,6/5],
+   sol:"En x=1: -1=5A. Coeficiente de x^{2}: A+B=1. Independiente: 4A-C=-2.",
+   solTex:"A=-\\tfrac15,\\quad B=\\tfrac65,\\quad C=\\tfrac65"},
+  {tipo:"coef",tex:"\\frac{2x+1}{x(x^{2}+4)}=\\frac{A}{x}+\\frac{Bx+C}{x^{2}+4}",campos:["A","B","C"],resp:[1/4,-1/4,2],
+   sol:"En x=0: 1=4A. Coeficiente de x^{2}: A+B=0. Coeficiente de x: C=2.",
+   solTex:"A=\\tfrac14,\\quad B=-\\tfrac14,\\quad C=2"}
+ ],
+ // ---- Nivel 4 (3 pts) — denominador cúbico, valor numérico
+ [
+  {tipo:"num",tex:"\\int_{0}^{1}\\frac{dx}{x^{3}+1}",resp:0.835649,
+   sol:"x^{3}+1=(x+1)(x^{2}-x+1). Descompón y usa completación de cuadrado en el término cuadrático.",
+   solTex:"\\tfrac13\\ln|x+1|-\\tfrac16\\ln(x^{2}-x+1)+\\tfrac{1}{\\sqrt3}\\arctan\\tfrac{2x-1}{\\sqrt3}"},
+  {tipo:"num",tex:"\\int_{2}^{3}\\frac{dx}{x^{3}-1}",resp:0.075389,
+   sol:"x^{3}-1=(x-1)(x^{2}+x+1). Mismo esquema: un logaritmo y un arcotangente.",
+   solTex:"\\tfrac13\\ln|x-1|-\\tfrac16\\ln(x^{2}+x+1)-\\tfrac{1}{\\sqrt3}\\arctan\\tfrac{2x+1}{\\sqrt3}"},
+  {tipo:"num",tex:"\\int_{1}^{2}\\frac{dx}{x^{3}+x}",resp:0.235002,
+   sol:"Saca factor común x: x(x^{2}+1). Sale A/x + (Bx+C)/(x^{2}+1) con A=1, B=-1, C=0.",
+   solTex:"\\ln|x|-\\tfrac12\\ln(x^{2}+1)"},
+  {tipo:"num",tex:"\\int_{3}^{4}\\frac{x\\,dx}{x^{3}-8}",resp:0.104909,
+   sol:"x^{3}-8=(x-2)(x^{2}+2x+4). El cuadrático es irreducible: completa cuadrado.",
+   solTex:"(x+1)^{2}+3\\ \\text{en el denominador cuadrático}"},
+  {tipo:"num",tex:"\\int_{1}^{2}\\frac{dx}{x^{3}+2x^{2}+x}",resp:0.121015,
+   sol:"x^{3}+2x^{2}+x=x(x+1)^{2}. Es un caso de factor lineal repetido.",
+   solTex:"\\ln|x|-\\ln|x+1|+\\frac{1}{x+1}"},
+  {tipo:"num",tex:"\\int_{2}^{3}\\frac{x+1}{x^{3}-x}\\,dx",resp:0.287682,
+   sol:"x^{3}-x=x(x-1)(x+1). Tres factores lineales distintos.",
+   solTex:"-\\ln|x|+\\ln|x-1|"}
+ ],
+ // ---- Nivel 5 (4 pts) — jefe
+ [
+  {tipo:"num",tex:"\\int_{0}^{1}\\frac{x^{2}+1}{(x^{2}+2x+2)(x+1)}\\,dx",resp:0.284648,
+   sol:"x^{2}+2x+2=(x+1)^{2}+1 es irreducible. Descompón en A/(x+1) + (Bx+C)/(x^{2}+2x+2).",
+   solTex:"(x+1)^{2}+1"},
+  {tipo:"num",tex:"\\int_{2}^{3}\\frac{dx}{x^{4}-1}",resp:0.030418,
+   sol:"x^{4}-1=(x-1)(x+1)(x^{2}+1). Aparecen dos logaritmos y un arcotangente.",
+   solTex:"\\tfrac14\\ln\\left|\\frac{x-1}{x+1}\\right|-\\tfrac12\\arctan x"},
+  {tipo:"num",tex:"\\int_{1}^{2}\\frac{dx}{x^{4}+x^{2}}",resp:0.178249,
+   sol:"x^{4}+x^{2}=x^{2}(x^{2}+1). Factor repetido más cuadrático irreducible.",
+   solTex:"-\\frac{1}{x}-\\arctan x"},
+  {tipo:"num",tex:"\\int_{3}^{4}\\frac{x^{2}}{x^{4}-16}\\,dx",resp:0.094942,
+   sol:"x^{4}-16=(x-2)(x+2)(x^{2}+4).",
+   solTex:"\\tfrac18\\ln\\left|\\frac{x-2}{x+2}\\right|+\\tfrac14\\arctan\\tfrac{x}{2}"},
+  {tipo:"num",tex:"\\int_{2}^{3}\\frac{x^{3}+1}{x^{3}-x^{2}}\\,dx",resp:1.814163,
+   sol:"Grado del numerador igual al del denominador: primero divide. Luego x^{3}-x^{2}=x^{2}(x-1).",
+   solTex:"\\text{Divide primero: }1+\\frac{x^{2}+1}{x^{2}(x-1)}"},
+  {tipo:"num",tex:"\\int_{2}^{3}\\frac{2x^{3}-4x-8}{(x^{2}-x)(x^{2}+4)}\\,dx",resp:0.304935,
+   sol:"El denominador es x(x-1)(x^{2}+4): dos lineales y un cuadrático irreducible.",
+   solTex:"\\frac{A}{x}+\\frac{B}{x-1}+\\frac{Cx+D}{x^{2}+4}"}
+ ]
+],
+B:[
+ // ---- Nivel 1 (1 pt) — raiz(a^2 - x^2)
+ [
+  {tipo:"sust",tex:"\\int_{1}^{2}\\frac{dx}{x^{2}\\sqrt{9-x^{2}}}",ops:["x=3\\sin\\theta","x=3\\tan\\theta","x=3\\sec\\theta","x=9\\sin\\theta"],correcta:0,resp:0.190044,
+   sol:"Con x=3\\sin\\theta queda \\sqrt{9-x^{2}}=3\\cos\\theta y dx=3\\cos\\theta\\,d\\theta.",
+   solTex:"-\\frac{\\sqrt{9-x^{2}}}{9x}"},
+  {tipo:"sust",tex:"\\int_{1}^{3/2}\\frac{dx}{x^{2}\\sqrt{4-x^{2}}}",ops:["x=2\\sin\\theta","x=4\\sin\\theta","x=2\\tan\\theta","x=2\\sec\\theta"],correcta:0,resp:0.212533,
+   sol:"a=2 porque 4=2^{2}. La raíz se vuelve 2\\cos\\theta.",
+   solTex:"-\\frac{\\sqrt{4-x^{2}}}{4x}"},
+  {tipo:"sust",tex:"\\int_{1}^{3}\\frac{\\sqrt{16-x^{2}}}{x^{2}}\\,dx",ops:["x=4\\sin\\theta","x=16\\sin\\theta","x=4\\sec\\theta","x=4\\tan\\theta"],correcta:0,resp:2.395684,
+   sol:"a=4. Después de sustituir aparece \\int\\cot^{2}\\theta\\,d\\theta.",
+   solTex:"-\\frac{\\sqrt{16-x^{2}}}{x}-\\arcsin\\frac{x}{4}"},
+  {tipo:"sust",tex:"\\int_{0}^{3}\\frac{x^{2}}{\\sqrt{25-x^{2}}}\\,dx",ops:["x=5\\sin\\theta","x=5\\tan\\theta","x=25\\sin\\theta","x=5\\sec\\theta"],correcta:0,resp:2.043764,
+   sol:"a=5. Queda \\int 25\\sin^{2}\\theta\\,d\\theta; usa el ángulo doble.",
+   solTex:"\\tfrac{25}{2}\\arcsin\\frac{x}{5}-\\frac{x\\sqrt{25-x^{2}}}{2}"},
+  {tipo:"sust",tex:"\\int_{1/2}^{4/5}\\frac{dx}{x\\sqrt{1-x^{2}}}",ops:["x=\\sin\\theta","x=\\tan\\theta","x=\\sec\\theta","x=\\cos\\theta"],correcta:0,resp:0.623811,
+   sol:"a=1. Queda \\int\\csc\\theta\\,d\\theta.",
+   solTex:"\\ln\\left|\\frac{1-\\sqrt{1-x^{2}}}{x}\\right|"},
+  {tipo:"sust",tex:"\\int_{1/2}^{4/5}\\frac{\\sqrt{1-x^{2}}}{x^{4}}\\,dx",ops:["x=\\sin\\theta","x=\\sec\\theta","x=\\tan\\theta","x=2\\sin\\theta"],correcta:0,resp:1.591426,
+   sol:"a=1. Aparece \\int\\cot^{2}\\theta\\csc^{2}\\theta\\,d\\theta.",
+   solTex:"-\\frac{(1-x^{2})^{3/2}}{3x^{3}}"}
+ ],
+ // ---- Nivel 2 (1 pt) — raiz(a^2 + x^2)
+ [
+  {tipo:"sust",tex:"\\int_{0}^{2}\\frac{x^{2}}{(x^{2}+4)^{3/2}}\\,dx",ops:["x=2\\tan\\theta","x=2\\sin\\theta","x=2\\sec\\theta","x=4\\tan\\theta"],correcta:0,resp:0.174267,
+   sol:"Con x=2\\tan\\theta se tiene \\sqrt{x^{2}+4}=2\\sec\\theta.",
+   solTex:"\\ln\\left|\\frac{\\sqrt{x^{2}+4}+x}{2}\\right|-\\frac{x}{\\sqrt{x^{2}+4}}"},
+  {tipo:"sust",tex:"\\int_{1}^{3}\\frac{dx}{x^{2}\\sqrt{x^{2}+9}}",ops:["x=3\\tan\\theta","x=3\\sin\\theta","x=9\\tan\\theta","x=3\\sec\\theta"],correcta:0,resp:0.194229,
+   sol:"a=3. Queda \\int\\frac{\\cos\\theta}{9\\sin^{2}\\theta}d\\theta.",
+   solTex:"-\\frac{\\sqrt{x^{2}+9}}{9x}"},
+  {tipo:"sust",tex:"\\int_{0}^{1}\\frac{dx}{(x^{2}+1)^{3/2}}",ops:["x=\\tan\\theta","x=\\sin\\theta","x=\\sec\\theta","x=\\cot\\theta"],correcta:0,resp:0.707107,
+   sol:"a=1. Todo se reduce a \\int\\cos\\theta\\,d\\theta.",
+   solTex:"\\frac{x}{\\sqrt{x^{2}+1}}"},
+  {tipo:"sust",tex:"\\int_{1}^{2}\\frac{\\sqrt{x^{2}+4}}{x}\\,dx",ops:["x=2\\tan\\theta","x=2\\sec\\theta","x=2\\sin\\theta","x=4\\tan\\theta"],correcta:0,resp:1.716883,
+   sol:"a=2. Aparece \\int\\frac{\\sec^{3}\\theta}{\\tan\\theta}d\\theta.",
+   solTex:"\\sqrt{x^{2}+4}-2\\ln\\left|\\frac{2+\\sqrt{x^{2}+4}}{x}\\right|"},
+  {tipo:"sust",tex:"\\int_{1}^{3}\\frac{dx}{x\\sqrt{x^{2}+16}}",ops:["x=4\\tan\\theta","x=4\\sin\\theta","x=4\\sec\\theta","x=16\\tan\\theta"],correcta:0,resp:0.249025,
+   sol:"a=4. Queda \\tfrac14\\int\\csc\\theta\\,d\\theta.",
+   solTex:"\\tfrac14\\ln\\left|\\frac{\\sqrt{x^{2}+16}-4}{x}\\right|"},
+  {tipo:"sust",tex:"\\int_{0}^{1}\\frac{x^{2}}{\\sqrt{x^{2}+1}}\\,dx",ops:["x=\\tan\\theta","x=\\sin\\theta","x=\\sec\\theta","x=2\\tan\\theta"],correcta:0,resp:0.266420,
+   sol:"a=1. Aparece \\int\\tan^{2}\\theta\\sec\\theta\\,d\\theta.",
+   solTex:"\\frac{x\\sqrt{x^{2}+1}}{2}-\\tfrac12\\ln|x+\\sqrt{x^{2}+1}|"}
+ ],
+ // ---- Nivel 3 (2 pts) — raiz(x^2 - a^2)
+ [
+  {tipo:"sust",tex:"\\int_{3}^{5}\\frac{\\sqrt{x^{2}-9}}{x}\\,dx",ops:["x=3\\sec\\theta","x=3\\tan\\theta","x=3\\sin\\theta","x=9\\sec\\theta"],correcta:0,resp:1.218114,
+   sol:"Con x=3\\sec\\theta queda \\sqrt{x^{2}-9}=3\\tan\\theta.",
+   solTex:"\\sqrt{x^{2}-9}-3\\operatorname{arcsec}\\frac{x}{3}"},
+  {tipo:"sust",tex:"\\int_{3}^{4}\\frac{dx}{x^{2}\\sqrt{x^{2}-4}}",ops:["x=2\\sec\\theta","x=2\\tan\\theta","x=4\\sec\\theta","x=2\\sin\\theta"],correcta:0,resp:0.030167,
+   sol:"a=2. Queda \\tfrac14\\int\\cos\\theta\\,d\\theta.",
+   solTex:"\\frac{\\sqrt{x^{2}-4}}{4x}"},
+  {tipo:"sust",tex:"\\int_{1}^{2}\\frac{\\sqrt{x^{2}-1}}{x^{4}}\\,dx",ops:["x=\\sec\\theta","x=\\tan\\theta","x=\\sin\\theta","x=\\csc\\theta"],correcta:0,resp:0.216506,
+   sol:"a=1. Aparece \\int\\sin^{2}\\theta\\cos\\theta\\,d\\theta.",
+   solTex:"\\frac{(x^{2}-1)^{3/2}}{3x^{3}}"},
+  {tipo:"sust",tex:"\\int_{4}^{5}\\frac{dx}{x^{3}\\sqrt{x^{2}-9}}",ops:["x=3\\sec\\theta","x=3\\tan\\theta","x=3\\sin\\theta","x=\\sec 3\\theta"],correcta:0,resp:0.003490,
+   sol:"a=3. Queda \\tfrac{1}{27}\\int\\cos^{2}\\theta\\,d\\theta.",
+   solTex:"\\frac{\\sqrt{x^{2}-9}}{18x^{2}}+\\frac{1}{54}\\operatorname{arcsec}\\frac{x}{3}"},
+  {tipo:"sust",tex:"\\int_{5}^{6}\\frac{x^{3}}{\\sqrt{x^{2}-16}}\\,dx",ops:["x=4\\sec\\theta","x=4\\tan\\theta","x=16\\sec\\theta","x=4\\sin\\theta"],correcta:0,resp:44.368415,
+   sol:"a=4. También sale con u=x^{2}-16, pero la sustitución trigonométrica pedida es la secante.",
+   solTex:"\\frac{(x^{2}-16)^{3/2}}{3}+16\\sqrt{x^{2}-16}"},
+  {tipo:"sust",tex:"\\int_{5}^{6}\\frac{\\sqrt{x^{2}-25}}{x^{3}}\\,dx",ops:["x=5\\sec\\theta","x=5\\tan\\theta","x=5\\sin\\theta","x=25\\sec\\theta"],correcta:0,resp:0.012504,
+   sol:"a=5. Aparece \\tfrac{1}{5}\\int\\sin^{2}\\theta\\,d\\theta.",
+   solTex:"\\frac{\\sqrt{x^{2}-25}}{2x^{2}}\\cdot\\!\\dots\\ \\text{(ángulo doble)}"}
+ ],
+ // ---- Nivel 4 (3 pts) — completación de cuadrado
+ [
+  {tipo:"sust",tex:"\\int_{0}^{1}\\sqrt{3-2x-x^{2}}\\,dx",ops:["x+1=2\\sin\\theta","x-1=2\\sin\\theta","x+1=2\\tan\\theta","x+1=2\\sec\\theta"],correcta:0,resp:1.228370,
+   sol:"Completa cuadrado: 3-2x-x^{2}=4-(x+1)^{2}. Entonces x+1=2\\sin\\theta.",
+   solTex:"2\\arcsin\\frac{x+1}{2}+\\frac{(x+1)\\sqrt{3-2x-x^{2}}}{2}"},
+  {tipo:"sust",tex:"\\int_{0}^{2}\\frac{dx}{\\sqrt{x^{2}+4x+8}}",ops:["x+2=2\\tan\\theta","x+2=2\\sin\\theta","x-2=2\\tan\\theta","x+2=2\\sec\\theta"],correcta:0,resp:0.562262,
+   sol:"x^{2}+4x+8=(x+2)^{2}+4. Es el caso a^{2}+u^{2}.",
+   solTex:"\\ln\\left|x+2+\\sqrt{x^{2}+4x+8}\\right|"},
+  {tipo:"sust",tex:"\\int_{0}^{2}\\frac{dx}{(x^{2}-2x+5)^{3/2}}",ops:["x-1=2\\tan\\theta","x-1=2\\sin\\theta","x+1=2\\tan\\theta","x-1=2\\sec\\theta"],correcta:0,resp:0.223607,
+   sol:"x^{2}-2x+5=(x-1)^{2}+4.",
+   solTex:"\\frac{x-1}{4\\sqrt{x^{2}-2x+5}}"},
+  {tipo:"sust",tex:"\\int_{1}^{3}\\sqrt{x^{2}+6x}\\,dx",ops:["x+3=3\\sec\\theta","x+3=3\\tan\\theta","x+3=3\\sin\\theta","x-3=3\\sec\\theta"],correcta:0,resp:7.949789,
+   sol:"x^{2}+6x=(x+3)^{2}-9. Es el caso u^{2}-a^{2}.",
+   solTex:"\\frac{(x+3)\\sqrt{x^{2}+6x}}{2}-\\frac92\\ln\\left|x+3+\\sqrt{x^{2}+6x}\\right|"},
+  {tipo:"sust",tex:"\\int_{0}^{2}\\frac{dx}{\\sqrt{8+2x-x^{2}}}",ops:["x-1=3\\sin\\theta","x+1=3\\sin\\theta","x-1=3\\tan\\theta","x-1=3\\sec\\theta"],correcta:0,resp:0.679674,
+   sol:"8+2x-x^{2}=9-(x-1)^{2}.",
+   solTex:"\\arcsin\\frac{x-1}{3}"},
+  {tipo:"sust",tex:"\\int_{4}^{6}\\frac{x+1}{\\sqrt{x^{2}-4x+3}}\\,dx",ops:["x-2=\\sec\\theta","x-2=\\tan\\theta","x+2=\\sec\\theta","x-2=\\sin\\theta"],correcta:0,resp:4.380370,
+   sol:"x^{2}-4x+3=(x-2)^{2}-1. Separa el numerador en la parte que sale por sustitución simple más una constante.",
+   solTex:"\\sqrt{x^{2}-4x+3}+3\\ln\\left|x-2+\\sqrt{x^{2}-4x+3}\\right|"}
+ ],
+ // ---- Nivel 5 (4 pts) — jefe
+ [
+  {tipo:"sust",tex:"\\int_{0}^{1}\\frac{dx}{(x^{2}+1)^{2}}",ops:["x=\\tan\\theta","x=\\sin\\theta","x=\\sec\\theta","x^{2}=\\tan\\theta"],correcta:0,resp:0.642699,
+   sol:"Queda \\int\\cos^{2}\\theta\\,d\\theta; usa el ángulo doble y luego devuelve la variable.",
+   solTex:"\\frac{x}{2(x^{2}+1)}+\\tfrac12\\arctan x"},
+  {tipo:"sust",tex:"\\int_{1}^{3}\\frac{\\sqrt{x^{2}+9}}{x^{2}}\\,dx",ops:["x=3\\tan\\theta","x=3\\sec\\theta","x=3\\sin\\theta","x=9\\tan\\theta"],correcta:0,resp:2.301988,
+   sol:"Aparece \\int\\frac{\\sec^{3}\\theta}{\\tan^{2}\\theta}d\\theta, que exige separar en secante más cosecante.",
+   solTex:"-\\frac{\\sqrt{x^{2}+9}}{x}+\\ln\\left|x+\\sqrt{x^{2}+9}\\right|"},
+  {tipo:"sust",tex:"\\int_{0}^{1}\\frac{x^{2}}{(4-x^{2})^{3/2}}\\,dx",ops:["x=2\\sin\\theta","x=2\\tan\\theta","x=4\\sin\\theta","x=2\\sec\\theta"],correcta:0,resp:0.053751,
+   sol:"Queda \\int\\tan^{2}\\theta\\,d\\theta=\\tan\\theta-\\theta.",
+   solTex:"\\frac{x}{\\sqrt{4-x^{2}}}-\\arcsin\\frac{x}{2}"},
+  {tipo:"sust",tex:"\\int_{4}^{6}\\frac{dx}{(x^{2}-9)^{3/2}}",ops:["x=3\\sec\\theta","x=3\\tan\\theta","x=3\\sin\\theta","x=9\\sec\\theta"],correcta:0,resp:0.039684,
+   sol:"Queda \\tfrac19\\int\\frac{\\cos\\theta}{\\sin^{2}\\theta}d\\theta.",
+   solTex:"-\\frac{x}{9\\sqrt{x^{2}-9}}"},
+  {tipo:"sust",tex:"\\int_{1}^{2}\\frac{\\sqrt{1+x^{2}}}{x^{3}}\\,dx",ops:["x=\\tan\\theta","x=\\sec\\theta","x=\\sin\\theta","x=\\cot\\theta"],correcta:0,resp:0.627679,
+   sol:"Aparece \\int\\frac{\\sec^{3}\\theta}{\\tan^{3}\\theta}d\\theta; conviene pasarlo a senos y cosenos.",
+   solTex:"-\\frac{\\sqrt{1+x^{2}}}{2x^{2}}-\\tfrac12\\ln\\left|\\frac{1+\\sqrt{1+x^{2}}}{x}\\right|"},
+  {tipo:"sust",tex:"\\int_{0}^{2}\\frac{x^{2}-1}{\\sqrt{x^{2}+1}}\\,dx",ops:["x=\\tan\\theta","x=\\sin\\theta","x=\\sec\\theta","x=2\\tan\\theta"],correcta:0,resp:0.070615,
+   sol:"Separa la integral en dos y trata cada una con la misma sustitución.",
+   solTex:"\\frac{x\\sqrt{x^{2}+1}}{2}-\\tfrac32\\ln|x+\\sqrt{x^{2}+1}|"}
+ ]
+]
+};
+
+const PESOS=[1,1,2,3,4];
+const NOMBRES_NIVEL={
+ A:["Lineales distintos","Lineal repetido","Cuadrático irreducible","Denominador cúbico","Jefe final"],
+ B:["Raíz de a²−x²","Raíz de a²+x²","Raíz de x²−a²","Completar cuadrado","Jefe final"]
+};
+
+const S={
+  nombre:"",equipo:"",rama:"",minutos:40,calidad:"alta",
+  puntos:0,vidas:3,penalizado:false,obstaculos:[],historial:[],
+  estado:"espera",seleccionOp:null,segundosRestantes:0,cronometro:null,
+  x:0,z:0,ang:0,vel:0,y:0,vy:0,enSuelo:true,giro:0,
+  adel:false,atras:false,izq:false,der:false,corre:false,
+  mangos:0,picadas:0,golpes:0,cajaCerca:null,nivelActual:0,pospuesta:null,cajaAbriendo:null,
+  abiertas:0,invuln:0,enBarro:false,tickBarro:0
+};
+
+const $=id=>document.getElementById(id);
+const mezclar=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+function tex(el,s,display=true){
+  try{ katex.render(s,el,{displayMode:display,throwOnError:false}); }catch(e){ el.textContent=s; }
+}
+function renderMixto(el,str){
+  el.innerHTML="";
+  str.split(/\s+/).forEach((tok,i)=>{
+    if(i) el.appendChild(document.createTextNode(" "));
+    const m=tok.match(/^(.*?)([.,;:)]?)$/s), nucleo=m[1], cola=m[2];
+    if(/[\\^_{}]|=/.test(nucleo)&&nucleo){ const s=document.createElement("span"); el.appendChild(s); tex(s,nucleo,false); }
+    else el.appendChild(document.createTextNode(nucleo));
+    if(cola) el.appendChild(document.createTextNode(cola));
+  });
+}
+function leerNumero(txt){
+  if(!txt) return NaN;
+  let t=txt.trim().replace(/−/g,"-").replace(/\s/g,"");
+  if(t.includes("/")){
+    const p=t.split("/"); if(p.length!==2) return NaN;
+    const a=parseFloat(p[0].replace(",",".")), b=parseFloat(p[1].replace(",","."));
+    if(isNaN(a)||isNaN(b)||b===0) return NaN;
+    return a/b;
+  }
+  return parseFloat(t.replace(",","."));
+}
+
+/* ================= SONIDO ================= */
+const Son={
+  ctx:null,on:true,ruidoBuf:null,listo:false,pasos:0,
+  iniciar(){
+    if(this.listo) return;
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    this.ctx=new AC();
+    const largo=this.ctx.sampleRate*1.2;
+    this.ruidoBuf=this.ctx.createBuffer(1,largo,this.ctx.sampleRate);
+    const d=this.ruidoBuf.getChannelData(0);
+    for(let i=0;i<largo;i++) d[i]=Math.random()*2-1;
+    this.listo=true;
+  },
+  nota(f,dur,tipo="sine",vol=0.16,retraso=0){
+    if(!this.listo||!this.on) return;
+    const t=this.ctx.currentTime+retraso;
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=tipo; o.frequency.setValueAtTime(f,t);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.015);
+    g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+    o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t+dur+0.05);
+  },
+  barrido(f1,f2,dur,vol=0.18,tipo="sawtooth"){
+    if(!this.listo||!this.on) return;
+    const t=this.ctx.currentTime;
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=tipo; o.frequency.setValueAtTime(f1,t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(30,f2),t+dur);
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t+dur+0.05);
+  },
+  ruido(dur,f1,f2,vol=0.25){
+    if(!this.listo||!this.on) return;
+    const t=this.ctx.currentTime;
+    const s=this.ctx.createBufferSource(); s.buffer=this.ruidoBuf;
+    const fl=this.ctx.createBiquadFilter(); fl.type="bandpass";
+    fl.frequency.setValueAtTime(f1,t); fl.frequency.exponentialRampToValueAtTime(f2,t+dur); fl.Q.value=3;
+    const g=this.ctx.createGain(); g.gain.setValueAtTime(vol,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    s.connect(fl); fl.connect(g); g.connect(this.ctx.destination); s.start(t); s.stop(t+dur);
+  },
+  paso(){ this.ruido(0.07,700,300,0.07); },
+  salto(){ this.barrido(320,760,0.16,0.12,"square"); },
+  girar(){ this.barrido(500,1100,0.22,0.09,"triangle"); },
+  romper(){ this.ruido(0.3,2600,300,0.28); this.nota(180,0.2,"square",0.11); },
+  mango(){ this.nota(880,0.12,"triangle",0.13); this.nota(1320,0.14,"triangle",0.11,0.06); },
+  picada(){ this.barrido(1400,600,0.25,0.14,"sawtooth"); this.ruido(0.25,3000,900,0.14); },
+  golpe(){ this.ruido(0.35,1400,140,0.28); this.barrido(220,70,0.4,0.18); },
+  chapoteo(){ this.ruido(0.25,500,140,0.16); },
+  acierto(){ [523.25,659.25,783.99,1046.5].forEach((f,i)=>this.nota(f,0.28,"triangle",0.15,i*0.075)); },
+  fallo(){ this.ruido(0.9,1200,200,0.2); this.barrido(300,70,0.7,0.18); },
+  pito(agudo){ this.nota(agudo?880:440,agudo?0.5:0.22,"square",0.11); },
+  meta(){ [523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>this.nota(f,0.5,"triangle",0.16,i*0.13)); }
+};
+$("btn-audio").addEventListener("click",()=>{
+  Son.on=!Son.on;
+  $("btn-audio").textContent=Son.on?"Sonido":"Silencio";
+  $("btn-audio").classList.toggle("mudo",!Son.on);
+});
+
+/* ================= MÚSICA ARCADE ================= */
+const Musica={
+  on:true, tocando:false, gan:null, paso:0, prox:0, reloj:null, vol:0.075,
+  // Am - F - C - G
+  bajos:[110.00,87.31,130.81,98.00],
+  triadas:[[440.00,523.25,659.25],[349.23,440.00,523.25],[392.00,523.25,659.25],[392.00,493.88,587.33]],
+  melodia:[0,2,1,2,0,1,2,1, 2,1,0,1,2,0,1,0],
+  iniciar(){
+    if(!Son.listo||this.gan) return;
+    this.gan=Son.ctx.createGain(); this.gan.gain.value=this.on?this.vol:0;
+    const f=Son.ctx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=4200;
+    this.gan.connect(f); f.connect(Son.ctx.destination);
+  },
+  voz(f,t,dur,tipo,vol){
+    const o=Son.ctx.createOscillator(), g=Son.ctx.createGain();
+    o.type=tipo; o.frequency.setValueAtTime(f,t);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+    o.connect(g); g.connect(this.gan); o.start(t); o.stop(t+dur+0.03);
+  },
+  percusion(t,fuerte){
+    const s=Son.ctx.createBufferSource(); s.buffer=Son.ruidoBuf;
+    const f=Son.ctx.createBiquadFilter(); f.type="highpass"; f.frequency.value=fuerte?2000:5200;
+    const g=Son.ctx.createGain();
+    g.gain.setValueAtTime(fuerte?0.14:0.06,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+(fuerte?0.09:0.045));
+    s.connect(f); f.connect(g); g.connect(this.gan);
+    s.start(t); s.stop(t+0.12);
+  },
+  programar(t){
+    const i=this.paso%16, compas=Math.floor(this.paso/16)%4;
+    const bajo=this.bajos[compas], tri=this.triadas[compas];
+    if([0,3,6,8,11,14].includes(i)) this.voz(bajo,t,0.16,"square",0.16);
+    if(i%2===0) this.voz(tri[this.melodia[i]],t,0.12,"triangle",0.085);
+    if(i===7||i===15) this.voz(tri[2]*2,t,0.1,"triangle",0.06);
+    if(i%4===0) this.percusion(t,true);
+    if(i%2===1) this.percusion(t,false);
+    this.paso++;
+  },
+  arrancar(){
+    if(!Son.listo) return;
+    this.iniciar();
+    if(this.tocando) return;
+    this.tocando=true; this.paso=0; this.prox=Son.ctx.currentTime+0.1;
+    const dur=60/132/4;
+    this.reloj=setInterval(()=>{
+      if(!this.tocando) return;
+      while(this.prox < Son.ctx.currentTime+0.25){ this.programar(this.prox); this.prox+=dur; }
+    },40);
+  },
+  parar(){ this.tocando=false; if(this.reloj) clearInterval(this.reloj); if(this.gan) this.gan.gain.value=0; },
+  bajar(){ if(this.gan&&this.on) this.gan.gain.setTargetAtTime(this.vol*0.3,Son.ctx.currentTime,0.2); },
+  subir(){ if(this.gan&&this.on) this.gan.gain.setTargetAtTime(this.vol,Son.ctx.currentTime,0.3); }
+};
+$("btn-musica").addEventListener("click",()=>{
+  Musica.on=!Musica.on;
+  $("btn-musica").textContent=Musica.on?"Música":"Sin música";
+  $("btn-musica").classList.toggle("mudo",!Musica.on);
+  if(Musica.gan) Musica.gan.gain.value=Musica.on?Musica.vol:0;
+});
+
+/* ================= MUNDO ================= */
+const RADIO=120;
+const E={ren:null,esc:null,cam:null,heroe:null,arboles:[],cajas:[],items:[],
+  avispas:[],barros:[],senderos:[],sacudida:0,camX:0,camZ:14,listo:false};
+
+// claros donde viven las cajas, y el punto de partida
+const CLAROS=[
+  {x:0,z:-72},{x:70,z:-40},{x:78,z:46},{x:-12,z:82},{x:-76,z:26}
+];
+const ENLACES=[[0,1],[1,2],[2,3],[3,4],[4,0]];
+
+function distSeg(px,pz,ax,az,bx,bz){
+  const dx=bx-ax, dz=bz-az, l2=dx*dx+dz*dz;
+  let t=l2?((px-ax)*dx+(pz-az)*dz)/l2:0;
+  t=Math.max(0,Math.min(1,t));
+  const cx=ax+t*dx, cz=az+t*dz;
+  return Math.hypot(px-cx,pz-cz);
+}
+function cercaDeSendero(x,z){
+  for(const s of E.senderos) if(distSeg(x,z,s.ax,s.az,s.bx,s.bz)<s.ancho) return true;
+  return false;
+}
+function puntoEnSendero(){
+  const s=E.senderos[Math.floor(Math.random()*E.senderos.length)];
+  const t=Math.random();
+  return {x:s.ax+(s.bx-s.ax)*t+(Math.random()-0.5)*4, z:s.az+(s.bz-s.az)*t+(Math.random()-0.5)*4};
+}
+
+/* ---------- Piezas redondeadas (estilo caricatura) ---------- */
+function mat(color,rug=0.85){ return new THREE.MeshStandardMaterial({color,roughness:rug,metalness:0.0}); }
+function bola(r,m,seg=18){ return new THREE.Mesh(new THREE.SphereGeometry(r,seg,Math.max(8,seg*0.7|0)),m); }
+function capsula(r,alto,m,seg=14){
+  const g=new THREE.Group();
+  const c=new THREE.Mesh(new THREE.CylinderGeometry(r,r,alto,seg),m); g.add(c);
+  const a=bola(r,m,seg); a.position.y=alto/2; g.add(a);
+  const b=bola(r,m,seg); b.position.y=-alto/2; g.add(b);
+  return g;
+}
+function sombraFalsa(r){
+  const c=document.createElement("canvas"); c.width=c.height=64;
+  const g=c.getContext("2d");
+  const rg=g.createRadialGradient(32,32,2,32,32,30);
+  rg.addColorStop(0,"rgba(0,0,0,.45)"); rg.addColorStop(1,"rgba(0,0,0,0)");
+  g.fillStyle=rg; g.fillRect(0,0,64,64);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(r*2,r*2),
+    new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));
+  m.rotation.x=-Math.PI/2; m.position.y=0.06; m.renderOrder=1;
+  m.userData.esSombra=true; return m;
+}
+function cielo(){
+  const c=document.createElement("canvas"); c.width=8; c.height=256;
+  const g=c.getContext("2d");
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,"#1E7FB8"); gr.addColorStop(0.45,"#5FC0DA");
+  gr.addColorStop(0.78,"#BFE8E8"); gr.addColorStop(1,"#F6E3B8");
+  g.fillStyle=gr; g.fillRect(0,0,8,256);
+  const t=new THREE.CanvasTexture(c);
+  const m=new THREE.Mesh(new THREE.SphereGeometry(300,24,16),
+    new THREE.MeshBasicMaterial({map:t,side:THREE.BackSide,fog:false}));
+  return m;
+}
+function nube(){
+  const g=new THREE.Group();
+  const m=new THREE.MeshStandardMaterial({color:0xFFFFFF,roughness:1,emissive:0x556677,emissiveIntensity:0.25});
+  [[0,0,0,7],[5.5,-1,1,5],[-5,-0.6,-1,5.4],[2,2.4,0.5,4.4],[-2.4,2,0,4]].forEach(([x,y,z,r])=>{
+    const b=bola(r,m,12); b.position.set(x,y,z); b.scale.y=0.72; g.add(b);
+  });
+  return g;
+}
+
+function texturaTierra(){
+  const c=document.createElement("canvas"); c.width=c.height=128;
+  const g=c.getContext("2d");
+  g.fillStyle="#C89A5E"; g.fillRect(0,0,128,128);
+  for(let i=0;i<700;i++){
+    g.fillStyle="rgba(150,110,62,"+(Math.random()*0.28)+")";
+    g.beginPath(); g.arc(Math.random()*128,Math.random()*128,1+Math.random()*2.5,0,7); g.fill();
+  }
+  for(let i=0;i<90;i++){
+    g.fillStyle="rgba(110,80,44,"+(0.1+Math.random()*0.2)+")";
+    g.beginPath(); g.ellipse(Math.random()*128,Math.random()*128,4+Math.random()*7,2+Math.random()*3,Math.random()*3,0,7); g.fill();
+  }
+  const t=new THREE.CanvasTexture(c);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1,6);
+  return t;
+}
+
+function hacerHeroe(){
+  const g=new THREE.Group();
+  const piel=mat(0xC8853F,0.92), pielClara=mat(0xE8C48A,0.95);
+  const oscuro=mat(0x4A2C15,0.8), blanco=mat(0xFFFFFF,0.5), negro=mat(0x1A1008,0.35);
+
+  const cuerpo=bola(1.05,piel); cuerpo.scale.set(1.05,0.95,1.3);
+  cuerpo.position.y=1.35; g.add(cuerpo);
+  const panza=bola(0.78,pielClara); panza.scale.set(1,0.85,0.65);
+  panza.position.set(0,1.15,0.72); g.add(panza);
+
+  const cabeza=bola(0.95,piel); cabeza.scale.set(1,0.92,1.05);
+  cabeza.position.set(0,2.75,0.18); g.add(cabeza);
+  const hocico=bola(0.58,piel); hocico.scale.set(1.05,0.78,0.95);
+  hocico.position.set(0,2.42,0.92); g.add(hocico);
+  const nariz=bola(0.2,oscuro); nariz.scale.set(1.5,0.85,0.7);
+  nariz.position.set(0,2.56,1.38); g.add(nariz);
+  const boca=bola(0.16,oscuro); boca.scale.set(1.7,0.45,0.5);
+  boca.position.set(0,2.2,1.28); g.add(boca);
+
+  [-0.4,0.4].forEach(lx=>{
+    const ojo=bola(0.3,blanco,16); ojo.scale.set(1,1.12,0.8);
+    ojo.position.set(lx,3.05,0.78); g.add(ojo);
+    const iris=bola(0.16,negro,14); iris.position.set(lx*1.03,3.03,1.0); g.add(iris);
+    const brillo=bola(0.06,blanco,10); brillo.position.set(lx*1.03+0.07,3.12,1.11); g.add(brillo);
+    const ceja=bola(0.16,piel); ceja.scale.set(1.6,0.4,0.6);
+    ceja.position.set(lx,3.38,0.72); g.add(ceja);
+    const oreja=bola(0.26,piel); oreja.scale.set(0.9,1,0.5);
+    oreja.position.set(lx*1.85,3.34,0.02); g.add(oreja);
+    const orejaIn=bola(0.16,mat(0x9A5C2A)); orejaIn.scale.set(0.8,1,0.4);
+    orejaIn.position.set(lx*2.0,3.32,0.12); g.add(orejaIn);
+  });
+
+  g.userData.brazos=[]; g.userData.piernas=[];
+  [-1,1].forEach(l=>{
+    const br=capsula(0.26,0.55,piel,12);
+    br.position.set(l*1.02,1.42,0.15); g.add(br); g.userData.brazos.push(br);
+    const mano=bola(0.3,pielClara,14); mano.position.set(l*1.02,1.0,0.18); g.add(mano);
+    const pierna=new THREE.Group();
+    const musl=capsula(0.32,0.5,piel,12); musl.position.y=-0.32; pierna.add(musl);
+    const pata=bola(0.34,oscuro,14); pata.scale.set(1,0.7,1.25);
+    pata.position.set(0,-0.68,0.15); pierna.add(pata);
+    pierna.position.set(l*0.5,0.95,0); g.add(pierna); g.userData.piernas.push(pierna);
+  });
+  const cola=bola(0.22,piel); cola.position.set(0,1.3,-1.32); g.add(cola);
+
+  const s=sombraFalsa(1.5); g.add(s); g.userData.sombra=s;
+  g.traverse(o=>{ if(o.isMesh && !o.userData.esSombra) o.castShadow=true; });
+  return g;
+}
+
+function cajaMadera(tam,texto){
+  const g=new THREE.Group();
+  const c=document.createElement("canvas"); c.width=c.height=256;
+  const x=c.getContext("2d");
+  const gr=x.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,"#D79A46"); gr.addColorStop(1,"#B87A32");
+  x.fillStyle=gr; x.fillRect(0,0,256,256);
+  x.strokeStyle="rgba(122,74,24,.5)"; x.lineWidth=3;
+  for(let i=0;i<26;i++){
+    const y=Math.random()*256;
+    x.beginPath(); x.moveTo(0,y); x.bezierCurveTo(70,y+5,180,y-5,256,y); x.stroke();
+  }
+  if(texto){
+    x.fillStyle="rgba(255,246,224,.95)";
+    x.beginPath(); x.arc(128,128,82,0,7); x.fill();
+    x.strokeStyle="#8A5A22"; x.lineWidth=7; x.stroke();
+    x.fillStyle="#3A2A18"; x.font="bold 140px Barlow, serif"; x.textAlign="center";
+    x.fillText(texto,128,182);
+  }
+  const tx=new THREE.CanvasTexture(c);
+  const cubo=new THREE.Mesh(new THREE.BoxGeometry(tam*0.94,tam*0.94,tam*0.94),
+    new THREE.MeshStandardMaterial({map:tx,roughness:0.82}));
+  cubo.position.y=tam/2; g.add(cubo);
+  const marco=mat(0x7A4A18,0.75);
+  const r=tam*0.045, h=tam*0.97;
+  [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([a,b])=>{
+    const v=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,8),marco);
+    v.position.set(a*tam*0.47,tam/2,b*tam*0.47); g.add(v);
+    const hx=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,8),marco);
+    hx.rotation.z=Math.PI/2; hx.position.set(0,tam/2+a*tam*0.47,b*tam*0.47); g.add(hx);
+    const hz=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,8),marco);
+    hz.rotation.x=Math.PI/2; hz.position.set(b*tam*0.47,tam/2+a*tam*0.47,0); g.add(hz);
+  });
+  g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
+  return g;
+}
+
+function restoCaja(x,z){
+  const g=new THREE.Group();
+  const tablas=mat(0x7A5530,0.95);
+  for(let i=0;i<5;i++){
+    const t=new THREE.Mesh(new THREE.BoxGeometry(1.9,0.22,0.5),tablas);
+    t.position.set((Math.random()-0.5)*2.2,0.12,(Math.random()-0.5)*2.2);
+    t.rotation.y=Math.random()*3; t.rotation.z=(Math.random()-0.5)*0.2;
+    t.castShadow=true; g.add(t);
+  }
+  const palo=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,2.6,6),mat(0x6B4A24));
+  palo.position.y=1.3; g.add(palo);
+  const bandera=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.7),
+    new THREE.MeshStandardMaterial({color:0xE03A2B,roughness:0.7,side:THREE.DoubleSide}));
+  bandera.position.set(0.6,2.2,0); g.add(bandera);
+  g.position.set(x,0,z);
+  return g;
+}
+function palmera(){
+  const g=new THREE.Group();
+  const tipo=Math.random();
+  if(tipo<0.5){
+    const tronco=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.62,7.5,10),mat(0x9A6B3C,0.95));
+    tronco.position.y=3.75; tronco.rotation.z=(Math.random()-0.5)*0.14; g.add(tronco);
+    const verdes=[0x3FA34D,0x54B84A,0x2E8B41];
+    for(let i=0;i<7;i++){
+      const hoja=new THREE.Mesh(new THREE.SphereGeometry(1.5,10,8),mat(verdes[i%3],0.95));
+      hoja.scale.set(1.9,0.22,0.75);
+      const a=i*(Math.PI*2/7)+Math.random()*0.3;
+      hoja.position.set(Math.cos(a)*2.1,7.3+Math.sin(i)*0.25,Math.sin(a)*2.1);
+      hoja.rotation.y=-a; hoja.rotation.z=-0.3-Math.random()*0.15; g.add(hoja);
+    }
+    const cocos=bola(0.35,mat(0x6B4A24)); cocos.position.set(0.5,6.9,0.3); g.add(cocos);
+  }else{
+    const tronco=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.72,3.6,10),mat(0x8A5F35,0.95));
+    tronco.position.y=1.8; g.add(tronco);
+    const verdes=[0x2F8B44,0x46A650,0x59C059];
+    [[0,4.9,0,2.5],[1.7,4.2,0.6,1.9],[-1.6,4.4,-0.5,2.0],[0.4,6.1,-0.8,1.8],[-0.6,5.9,1,1.7]].forEach(([x,y,z,r],i)=>{
+      const b=bola(r,mat(verdes[i%3],0.97),14);
+      b.position.set(x,y,z); b.scale.y=0.85; g.add(b);
+    });
+  }
+  g.traverse(o=>{ if(o.isMesh && !o.userData.esSombra) o.castShadow=true; });
+  return g;
+}
+
+function mangoMalla(){
+  const g=new THREE.Group();
+  const f=bola(0.5,new THREE.MeshStandardMaterial({color:0xFFA523,roughness:0.45,emissive:0x904000,emissiveIntensity:0.25}),16);
+  f.scale.set(1,1.2,0.88); f.position.y=1.15; g.add(f);
+  const rubor=bola(0.3,mat(0xE8442B,0.5),12);
+  rubor.scale.set(1,1.1,0.5); rubor.position.set(0.2,1.3,0.34); g.add(rubor);
+  const tallo=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,0.28,6),mat(0x6B4A24));
+  tallo.position.y=1.72; g.add(tallo);
+  const hoja=bola(0.2,mat(0x3FA34D),10); hoja.scale.set(1.7,0.25,0.8);
+  hoja.position.set(0.22,1.8,0); hoja.rotation.z=0.4; g.add(hoja);
+  g.add(sombraFalsa(0.7));
+  g.traverse(o=>{ if(o.isMesh && !o.userData.esSombra) o.castShadow=true; });
+  return g;
+}
+
+function barril(){
+  const g=new THREE.Group();
+  const cuerpo=new THREE.Mesh(new THREE.CylinderGeometry(0.78,0.78,1.7,16),mat(0x2F8B55,0.7));
+  cuerpo.position.y=0.95; g.add(cuerpo);
+  const panza=bola(0.92,mat(0x35A263,0.7),16); panza.scale.y=0.62; panza.position.y=0.95; g.add(panza);
+  [0.45,1.45].forEach(y=>{
+    const aro=new THREE.Mesh(new THREE.TorusGeometry(0.86,0.1,8,18),
+      new THREE.MeshStandardMaterial({color:0xFFC12E,roughness:0.4,metalness:0.3}));
+    aro.rotation.x=Math.PI/2; aro.position.y=y; g.add(aro);
+  });
+  const tapa=new THREE.Mesh(new THREE.CylinderGeometry(0.8,0.8,0.14,16),mat(0x8A5F35));
+  tapa.position.y=1.82; g.add(tapa);
+  g.add(sombraFalsa(1.1));
+  g.traverse(o=>{ if(o.isMesh && !o.userData.esSombra) o.castShadow=true; });
+  return g;
+}
+
+function avispaMalla(){
+  const g=new THREE.Group();
+  const amar=mat(0xFFC12E,0.5), negr=mat(0x2A1A10,0.5);
+  const cab=bola(0.32,negr,14); cab.position.z=0.55; g.add(cab);
+  [[0.18,amar,0.36],[ -0.2,negr,0.34],[-0.58,amar,0.3],[-0.9,negr,0.2]].forEach(([z,m,r])=>{
+    const b=bola(r,m,14); b.scale.set(1,0.92,1.1); b.position.z=z; g.add(b);
+  });
+  [-1,1].forEach(l=>{
+    const ojo=bola(0.12,mat(0xFFFFFF,0.3),10); ojo.position.set(l*0.16,0.1,0.75); g.add(ojo);
+    const ala=bola(0.45,new THREE.MeshStandardMaterial({color:0xEAF6FF,roughness:0.2,transparent:true,opacity:0.55}),12);
+    ala.scale.set(1.5,0.1,0.6); ala.position.set(l*0.42,0.34,-0.05); ala.rotation.z=l*0.3; g.add(ala);
+    const ant=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.4,6),negr);
+    ant.position.set(l*0.12,0.4,0.72); ant.rotation.x=-0.5; ant.rotation.z=l*0.3; g.add(ant);
+  });
+  g.traverse(o=>{ if(o.isMesh && !o.userData.esSombra) o.castShadow=true; });
+  return g;
+}
+
+function initEscena(){
+  const cv=$("lienzo3d");
+  E.ren=new THREE.WebGLRenderer({canvas:cv,antialias:S.calidad==="alta"});
+  E.ren.setPixelRatio(S.calidad==="alta"?Math.min(devicePixelRatio,2):1);
+  E.ren.outputEncoding=THREE.sRGBEncoding;
+  E.ren.toneMapping=THREE.ACESFilmicToneMapping;
+  E.ren.toneMappingExposure=1.08;
+  E.sombrasReales = S.calidad==="alta";
+  if(E.sombrasReales){
+    E.ren.shadowMap.enabled=true;
+    E.ren.shadowMap.type=THREE.PCFSoftShadowMap;
+  }
+  E.esc=new THREE.Scene();
+  E.esc.fog=new THREE.Fog(0x9FD9E4,95,215);
+  E.esc.add(cielo());
+  E.cam=new THREE.PerspectiveCamera(58,16/9,0.1,420);
+
+  // luz: clave cálida, relleno de cielo y rebote del suelo
+  E.esc.add(new THREE.HemisphereLight(0xCFEBFF,0x54803E,0.85));
+  const sol=new THREE.DirectionalLight(0xFFF1CE,1.35);
+  sol.position.set(-30,48,24); E.esc.add(sol); E.esc.add(sol.target); E.sol=sol;
+  if(E.sombrasReales){
+    sol.castShadow=true;
+    sol.shadow.mapSize.set(1024,1024);
+    const c=sol.shadow.camera;
+    c.left=-42; c.right=42; c.top=42; c.bottom=-42; c.near=1; c.far=140;
+    sol.shadow.bias=-0.0015; sol.shadow.normalBias=0.035;
+  }
+  const relleno=new THREE.DirectionalLight(0xBFE0FF,0.28);
+  relleno.position.set(35,20,-30); E.esc.add(relleno);
+
+  for(let i=0;i<9;i++){
+    const n=nube();
+    n.position.set((Math.random()-0.5)*320,54+Math.random()*26,(Math.random()-0.5)*320);
+    n.scale.setScalar(1.4+Math.random()*1.5); E.esc.add(n);
+  }
+
+  const suelo=new THREE.Mesh(new THREE.CircleGeometry(RADIO+18,64),
+    mat(0x5A9A48,0.98));
+  suelo.rotation.x=-Math.PI/2; suelo.receiveShadow=true; E.esc.add(suelo);
+
+  // red de senderos: centro -> cada claro, y anillo entre claros
+  const aristas=[];
+  CLAROS.forEach((c,i)=>aristas.push([{x:0,z:14},c]));
+  ENLACES.forEach(([a,b])=>aristas.push([CLAROS[a],CLAROS[b]]));
+  const texT=texturaTierra();
+  aristas.forEach(([a,b])=>{
+    const dx=b.x-a.x, dz=b.z-a.z, largo=Math.hypot(dx,dz);
+    const ancho=7;
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(ancho,largo),
+      new THREE.MeshStandardMaterial({map:texT,roughness:0.98}));
+    m.receiveShadow=true;
+    m.rotation.x=-Math.PI/2;
+    m.position.set((a.x+b.x)/2,0.05,(a.z+b.z)/2);
+    m.rotation.z=-Math.atan2(dx,dz);
+    E.esc.add(m);
+    E.senderos.push({ax:a.x,az:a.z,bx:b.x,bz:b.z,ancho:ancho/2+1.5});
+  });
+  // claros de tierra
+  CLAROS.forEach(c=>{
+    const m=new THREE.Mesh(new THREE.CircleGeometry(13,28),
+      new THREE.MeshStandardMaterial({map:texT,roughness:0.98}));
+    m.receiveShadow=true;
+    m.rotation.x=-Math.PI/2; m.position.set(c.x,0.06,c.z); E.esc.add(m);
+  });
+
+  // vegetación: llena todo menos los senderos
+  const nArb=S.calidad==="alta"?170:100;
+  let intentos=0;
+  while(E.arboles.length<nArb && intentos<4000){
+    intentos++;
+    const a=Math.random()*Math.PI*2, r=Math.sqrt(Math.random())*RADIO;
+    const x=Math.cos(a)*r, z=Math.sin(a)*r;
+    if(cercaDeSendero(x,z)) continue;
+    if(CLAROS.some(c=>Math.hypot(x-c.x,z-c.z)<15)) continue;
+    if(Math.hypot(x,z-14)<14) continue;
+    const p=palmera();
+    p.position.set(x,0,z); p.scale.setScalar(0.75+Math.random()*0.7);
+    p.rotation.y=Math.random()*3;
+    E.esc.add(p); E.arboles.push({malla:p,x,z,r:1.5});
+  }
+  // muro de palmeras en el borde
+  for(let i=0;i<70;i++){
+    const a=(i/70)*Math.PI*2;
+    const p=palmera();
+    p.position.set(Math.cos(a)*(RADIO+6),0,Math.sin(a)*(RADIO+6));
+    p.scale.setScalar(1.1); E.esc.add(p);
+  }
+
+  // cajas de integrales, una por claro, en orden aleatorio de dificultad
+  const orden=mezclar([0,1,2,3,4]);
+  CLAROS.forEach((c,i)=>{
+    const nivel=orden[i];
+    const g=new THREE.Group();
+    const base=cajaMadera(3.4,"∫"); g.add(base);
+    const marca=new THREE.Mesh(new THREE.OctahedronGeometry(0.95,0),
+      new THREE.MeshStandardMaterial({color:0xFFD24A,roughness:0.18,metalness:0.55,
+        emissive:0xFFA300,emissiveIntensity:0.45}));
+    marca.position.y=6.2; marca.castShadow=true; g.add(marca);
+    const halo=new THREE.Mesh(new THREE.RingGeometry(1.3,1.7,24),
+      new THREE.MeshBasicMaterial({color:0xFFD24A,transparent:true,opacity:0.4,side:THREE.DoubleSide}));
+    halo.rotation.x=-Math.PI/2; halo.position.y=0.12; g.add(halo);
+    g.position.set(c.x,0,c.z);
+    E.esc.add(g);
+    E.cajas.push({malla:g,marca,x:c.x,z:c.z,nivel,abierta:false,estado:'pendiente'});
+  });
+
+  // mangos, barriles, barrizales y avispas repartidos
+  const nMangos=S.calidad==="alta"?60:34;
+  for(let i=0;i<nMangos;i++){
+    const p=puntoEnSendero();
+    const m=mangoMalla(); m.position.set(p.x,0,p.z);
+    E.esc.add(m); E.items.push({malla:m,x:p.x,z:p.z,tipo:"mango",vivo:true});
+  }
+  for(let i=0;i<26;i++){
+    const p=puntoEnSendero();
+    const b=barril(); b.position.set(p.x,0,p.z);
+    E.esc.add(b); E.items.push({malla:b,x:p.x,z:p.z,tipo:"barril",vivo:true});
+  }
+  for(let i=0;i<14;i++){
+    const p=puntoEnSendero();
+    const m=new THREE.Mesh(new THREE.CircleGeometry(4.2,22),
+      new THREE.MeshStandardMaterial({color:0x6B5330,roughness:0.25,metalness:0.05}));
+    m.rotation.x=-Math.PI/2; m.position.set(p.x,0.09,p.z); m.receiveShadow=true;
+    for(let b=0;b<4;b++){
+      const burb=bola(0.28+Math.random()*0.25,mat(0x7A6038,0.3),10);
+      burb.scale.y=0.4;
+      const aa=Math.random()*7, rr=Math.random()*3.2;
+      burb.position.set(p.x+Math.cos(aa)*rr,0.14,p.z+Math.sin(aa)*rr);
+      E.esc.add(burb);
+    }
+    E.esc.add(m); E.barros.push({x:p.x,z:p.z,r:4.2});
+  }
+  const nAv=S.calidad==="alta"?12:7;
+  for(let i=0;i<nAv;i++){
+    const p=puntoEnSendero();
+    const a=avispaMalla(); a.position.set(p.x,2.6,p.z);
+    E.esc.add(a);
+    E.avispas.push({malla:a,x:p.x,z:p.z,ox:p.x,oz:p.z,fase:Math.random()*6,persigue:false,calma:0});
+  }
+
+  E.heroe=hacerHeroe(); E.esc.add(E.heroe);
+  if(E.sombrasReales) E.heroe.userData.sombra.visible=false;
+  redimensionar(); window.addEventListener("resize",redimensionar);
+  E.listo=true;
+}
+function redimensionar(){
+  if(!E.ren) return;
+  const w=$("mundo").clientWidth;
+  const h=Math.max(280,Math.min(Math.round(w*0.55),580));
+  E.ren.setSize(w,h,false);
+  E.cam.aspect=w/h; E.cam.updateProjectionMatrix();
+}
+
+/* ================= CONTROLES ================= */
+function saltar(){ if(S.estado==="explorando"&&S.enSuelo){ S.vy=0.58; S.enSuelo=false; Son.salto(); } }
+function accion(){
+  if(S.estado!=="explorando") return;
+  if(S.cajaCerca && !S.cajaCerca.abierta && S.cajaCerca!==S.pospuesta){ abrirCaja(S.cajaCerca); return; }
+  if(S.giro<=0){ S.giro=Math.PI*2.4; Son.girar(); }
+}
+const teclas={ArrowUp:"adel",w:"adel",W:"adel",ArrowDown:"atras",s:"atras",S:"atras",
+              ArrowLeft:"izq",a:"izq",A:"izq",ArrowRight:"der",d:"der",D:"der"};
+document.addEventListener("keydown",e=>{
+  if(teclas[e.key]){ S[teclas[e.key]]=true; if(S.estado==="explorando") e.preventDefault(); }
+  if(e.key==="Shift") S.corre=true;
+  if(e.code==="Space"){ if(S.estado==="explorando") e.preventDefault(); saltar(); }
+  if(e.key==="x"||e.key==="X") accion();
+});
+document.addEventListener("keyup",e=>{
+  if(teclas[e.key]) S[teclas[e.key]]=false;
+  if(e.key==="Shift") S.corre=false;
+});
+function mantener(btn,lado){
+  const on=e=>{e.preventDefault(); S[lado]=true;}, off=e=>{e.preventDefault(); S[lado]=false;};
+  btn.addEventListener("pointerdown",on); btn.addEventListener("pointerup",off);
+  btn.addEventListener("pointerleave",off); btn.addEventListener("pointercancel",off);
+}
+mantener($("btn-adel"),"adel"); mantener($("btn-atras"),"atras");
+mantener($("btn-izq"),"izq"); mantener($("btn-der"),"der");
+$("btn-salto").addEventListener("pointerdown",e=>{e.preventDefault(); saltar();});
+$("btn-giro").addEventListener("pointerdown",e=>{e.preventDefault(); accion();});
+
+function gritar(txt){
+  const g=$("grito"); g.textContent=txt; g.classList.add("ver");
+  clearTimeout(g._t); g._t=setTimeout(()=>g.classList.remove("ver"),850);
+}
+function quitarMangos(n,txt,sonido){
+  S.mangos=Math.max(0,S.mangos-n);
+  pintarMangos(); S.invuln=150; E.sacudida=35;
+  $("flash").classList.add("on"); setTimeout(()=>$("flash").classList.remove("on"),240);
+  gritar(txt); sonido();
+}
+function pintarMangos(){
+  $("hud-mangos").textContent=S.mangos;
+  $("hud-mangos").classList.toggle("baja",S.mangos===0);
+}
+
+/* ================= BUCLE ================= */
+let ultimo=0, paso=0;
+function bucle(t){
+  if(S.estado==="fin") return;
+  const dt=Math.min(0.05,(t-ultimo)/1000||0.016); ultimo=t;
+  const f=dt*60;
+  const libre = S.estado==="explorando";
+
+  // giro y avance
+  if(libre){
+    const velGiro=0.045*f;
+    if(S.izq) S.ang+=velGiro;
+    if(S.der) S.ang-=velGiro;
+    let tope=(S.corre?0.52:0.3);
+    if(S.enBarro) tope*=0.42;
+    if(S.adel) S.vel=Math.min(tope,S.vel+0.035*f);
+    else if(S.atras) S.vel=Math.max(-tope*0.55,S.vel-0.035*f);
+    else S.vel*=Math.pow(0.82,f);
+  }else S.vel*=0.85;
+
+  const nx=S.x - Math.sin(S.ang)*S.vel*f;
+  const nz=S.z - Math.cos(S.ang)*S.vel*f;
+  let bloqueado=false;
+  for(const a of E.arboles){
+    if(Math.hypot(nx-a.x,nz-a.z)<a.r+1.1){ bloqueado=true; break; }
+  }
+  if(!bloqueado && Math.hypot(nx,nz)<RADIO){ S.x=nx; S.z=nz; }
+  else S.vel*=0.3;
+
+  // barrizal
+  const antesBarro=S.enBarro;
+  S.enBarro=E.barros.some(b=>Math.hypot(S.x-b.x,S.z-b.z)<b.r);
+  if(S.enBarro){
+    if(!antesBarro){ Son.chapoteo(); gritar("Barrizal: te frena"); }
+    S.tickBarro+=dt;
+    if(S.tickBarro>=1.2){ S.tickBarro=0; S.mangos=Math.max(0,S.mangos-1); pintarMangos(); }
+  }else S.tickBarro=0;
+
+  // salto
+  S.vy-=0.032*f; S.y+=S.vy*f;
+  if(S.y<=0){ S.y=0; S.vy=0; S.enSuelo=true; }
+  if(S.giro>0){ const g=0.2*f; S.giro-=g; }
+
+  E.heroe.position.set(S.x,S.y,S.z);
+  E.heroe.rotation.y=S.ang+(S.giro>0?S.giro*3:0);
+  if(E.heroe.userData.sombra.visible) E.heroe.userData.sombra.position.y=-S.y+0.06;
+  paso+=Math.abs(S.vel)*f*0.9;
+  if(Math.abs(S.vel)>0.05 && S.enSuelo){
+    Son.pasos+=Math.abs(S.vel)*f;
+    if(Son.pasos>6){ Son.pasos=0; Son.paso(); }
+  }
+  const bal=S.enSuelo?Math.sin(paso)*0.5:0.5;
+  E.heroe.userData.piernas[0].rotation.x=bal;
+  E.heroe.userData.piernas[1].rotation.x=-bal;
+  E.heroe.userData.brazos.forEach((b,i)=>b.rotation.x=(i?bal:-bal)*0.6);
+  if(S.invuln>0){ S.invuln-=f; E.heroe.visible=Math.floor(t/70)%2===0||S.invuln<=0; }
+  else E.heroe.visible=true;
+
+  // items
+  E.items.forEach(it=>{
+    if(!it.vivo) return;
+    if(it.tipo==="mango") it.malla.rotation.y+=0.05*f;
+    const d=Math.hypot(S.x-it.x,S.z-it.z);
+    if(it.tipo==="mango" && d<2.2){
+      it.vivo=false; E.esc.remove(it.malla);
+      S.mangos+=1; pintarMangos(); Son.mango();
+    }
+    if(it.tipo==="barril" && d<2.1 && S.invuln<=0 && libre){
+      if(S.giro>0){
+        it.vivo=false; E.esc.remove(it.malla);
+        S.mangos+=2; pintarMangos(); Son.romper(); gritar("+2 mangos");
+      }else if(S.y<1.6){
+        S.golpes++; S.vel=-0.18;
+        quitarMangos(3,"¡Barril! −3 mangos",()=>Son.golpe());
+      }
+    }
+  });
+
+  // avispas: persiguen poco, se cansan y vuelven a su sitio
+  E.avispas.forEach(av=>{
+    av.fase+=dt*2;
+    const d=Math.hypot(S.x-av.x,S.z-av.z);
+    const dCasa=Math.hypot(av.x-av.ox,av.z-av.oz);
+    if(av.calma>0){ av.calma-=dt; av.persigue=false; }
+    else if(!av.persigue && d<9 && libre && S.giro<=0) av.persigue=true;
+    if(av.persigue && (d>18 || dCasa>26)) av.persigue=false;
+    if(S.giro>0 && d<5.5){ av.persigue=false; av.calma=8; }
+    const tx=av.persigue?S.x:av.ox, tz=av.persigue?S.z:av.oz;
+    const k=(av.persigue?0.17:0.09)*f;
+    const dd=Math.hypot(tx-av.x,tz-av.z);
+    if(dd>0.5){ av.x+=(tx-av.x)/dd*k; av.z+=(tz-av.z)/dd*k; }
+    av.malla.position.set(av.x,2.4+Math.sin(av.fase*3)*0.5,av.z);
+    av.malla.rotation.y=Math.atan2(tx-av.x,tz-av.z);
+    if(av.persigue && d<1.9 && S.invuln<=0 && libre){
+      S.picadas++; av.persigue=false; av.calma=7;
+      quitarMangos(5,"¡Picada! −5 mangos",()=>Son.picada());
+    }
+  });
+
+  // cajas cercanas
+  S.cajaCerca=null;
+  E.cajas.forEach(c=>{
+    if(c.abierta) return;
+    c.marca.rotation.y+=0.03*f;
+    c.marca.position.y=6.2+Math.sin(t*0.003)*0.4;
+    if(Math.hypot(S.x-c.x,S.z-c.z)<5) S.cajaCerca=c;
+  });
+  if(S.pospuesta && Math.hypot(S.x-S.pospuesta.x,S.z-S.pospuesta.z)>8) S.pospuesta=null;
+  const puedeAbrir = !!S.cajaCerca && libre && S.cajaCerca!==S.pospuesta;
+  $("pedir").classList.toggle("ver",puedeAbrir);
+  if(S.cajaCerca && S.cajaCerca===S.pospuesta) $("pedir").classList.remove("ver");
+
+  // brújula: caja más cercana sin abrir
+  if(libre){
+    let mejor=null,dm=1e9;
+    E.cajas.forEach(c=>{ if(c.abierta) return; const d=Math.hypot(S.x-c.x,S.z-c.z); if(d<dm){dm=d;mejor=c;} });
+    $("rotulo").textContent = mejor
+      ? "Cajas abiertas "+S.abiertas+" / 5 · la más cercana a "+Math.round(dm)+" pasos"
+      : "¡Abriste las cinco cajas!";
+  }
+
+  // cámara detrás del chigüire, suavizada
+  let sx=0,sy=0;
+  if(E.sacudida>0){ E.sacudida-=f; sx=(Math.random()-0.5)*0.8; sy=(Math.random()-0.5)*0.6; }
+  const objX=S.x+Math.sin(S.ang)*13, objZ=S.z+Math.cos(S.ang)*13;
+  E.camX+=(objX-E.camX)*Math.min(1,0.09*f);
+  E.camZ+=(objZ-E.camZ)*Math.min(1,0.09*f);
+  E.cam.position.set(E.camX+sx,7.2+sy+S.y*0.4,E.camZ);
+  E.cam.lookAt(S.x,2.2+S.y*0.5,S.z);
+
+  if(E.sol){
+    E.sol.position.set(S.x-30,48,S.z+24);
+    E.sol.target.position.set(S.x,0,S.z);
+    E.sol.target.updateMatrixWorld();
+  }
+  dibujarMapa();
+  E.ren.render(E.esc,E.cam);
+  requestAnimationFrame(bucle);
+}
+
+/* ================= MINIMAPA ================= */
+const mc=$("mapa"), mg=mc.getContext("2d");
+function dibujarMapa(){
+  const W=mc.width, k=W/(RADIO*2.3), cx=W/2, cy=W/2;
+  mg.clearRect(0,0,W,W);
+  mg.fillStyle="rgba(30,107,58,.75)"; mg.beginPath(); mg.arc(cx,cy,W/2-3,0,7); mg.fill();
+  mg.strokeStyle="rgba(201,139,62,.95)"; mg.lineWidth=3;
+  E.senderos.forEach(s=>{
+    mg.beginPath();
+    mg.moveTo(cx+s.ax*k,cy+s.az*k); mg.lineTo(cx+s.bx*k,cy+s.bz*k); mg.stroke();
+  });
+  E.cajas.forEach(c=>{
+    mg.fillStyle = c.estado==='ok' ? "#54B84A" : c.estado==='mal' ? "#E03A2B" : "#FFC12E";
+    mg.beginPath(); mg.arc(cx+c.x*k,cy+c.z*k,4.5,0,7); mg.fill();
+    mg.strokeStyle="#16221B"; mg.lineWidth=1.5; mg.stroke();
+  });
+  mg.save();
+  mg.translate(cx+S.x*k,cy+S.z*k); mg.rotate(-S.ang);
+  mg.fillStyle="#FFF3D6"; mg.beginPath();
+  mg.moveTo(0,-6); mg.lineTo(4,5); mg.lineTo(-4,5); mg.closePath(); mg.fill();
+  mg.restore();
+}
+
+/* ================= REGISTRO ================= */
+(function(){
+  const sel=$("equipo");
+  for(let i=1;i<=10;i++){ const o=document.createElement("option"); o.value="Equipo "+i; o.textContent="Equipo "+i; sel.appendChild(o); }
+})();
+document.querySelectorAll(".rama-op").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll(".rama-op").forEach(o=>o.setAttribute("aria-pressed","false"));
+    b.setAttribute("aria-pressed","true"); S.rama=b.dataset.rama;
+  });
+});
+$("arrancar").addEventListener("click",()=>{
+  const n=$("nombre").value.trim(), e=$("equipo").value;
+  if(!n){ $("aviso").textContent="Escribe tu nombre para que el profesor sepa quién exploró."; return; }
+  if(!e){ $("aviso").textContent="Falta elegir el equipo."; return; }
+  if(!S.rama){ $("aviso").textContent="Falta elegir el tramo."; return; }
+  if(!window.THREE){ $("aviso").textContent="No cargó la librería 3D. Revisa la conexión y recarga."; return; }
+  S.nombre=n; S.equipo=e; S.minutos=parseInt($("minutos").value,10); S.calidad=$("calidad").value;
+  Son.iniciar(); if(Son.ctx&&Son.ctx.state==="suspended") Son.ctx.resume();
+  iniciar();
+});
+
+function iniciar(){
+  S.obstaculos=BANCO[S.rama].map(niv=>niv[Math.floor(Math.random()*niv.length)]);
+  S.puntos=0; S.vidas=3; S.penalizado=false; S.historial=[];
+  S.x=0; S.z=14; S.ang=0; S.vel=0; S.y=0; S.vy=0; S.enSuelo=true; S.giro=0;
+  S.mangos=0; S.picadas=0; S.golpes=0; S.abiertas=0; S.invuln=0;
+  E.camX=0; E.camZ=27;
+  $("hud-nombre").textContent=S.nombre.split(" ")[0];
+  $("hud-equipo").textContent=S.equipo.replace("Equipo ","Eq. ");
+  actualizarHud(); pintarMangos();
+  $("registro").classList.remove("activa"); $("juego").classList.add("activa");
+  try{ initEscena(); }catch(err){ alert("No se pudo iniciar el 3D en este equipo."); return; }
+  S.segundosRestantes=S.minutos*60; pintarReloj();
+  S.estado="explorando";
+  Musica.arrancar();
+  requestAnimationFrame(bucle);
+  S.cronometro=setInterval(()=>{
+    S.segundosRestantes--; pintarReloj();
+    if(S.segundosRestantes===60) Son.pito(true);
+    if(S.segundosRestantes<=0) terminar("tiempo");
+  },1000);
+  gritar("¡A explorar!");
+}
+function pintarReloj(){
+  const m=Math.floor(S.segundosRestantes/60), s=S.segundosRestantes%60;
+  const r=$("reloj");
+  r.textContent=String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  r.classList.toggle("alerta",S.segundosRestantes<=120);
+}
+function actualizarHud(){
+  $("hud-puntos").textContent=S.puntos;
+  $("hud-cajas").textContent=S.abiertas+" / 5";
+  const v=$("hud-vidas").children;
+  for(let i=0;i<3;i++) v[i].classList.toggle("perdida",i>=S.vidas);
+}
+
+/* ================= PREGUNTAS ================= */
+function abrirCaja(caja){
+  Musica.bajar();
+  S.estado="pregunta"; S.seleccionOp=null; S.nivelActual=caja.nivel; S.cajaAbriendo=caja;
+  Son.ruido(0.3,900,200,0.16);
+  const ob=S.obstaculos[caja.nivel], n=caja.nivel+1;
+  $("panel-titulo").textContent="Caja · "+NOMBRES_NIVEL[S.rama][caja.nivel];
+  $("panel-valor").textContent="Vale "+PESOS[caja.nivel]+(PESOS[caja.nivel]===1?" punto":" puntos");
+  tex($("enunciado"),ob.tex,true);
+  $("opciones").innerHTML=""; $("coefs").innerHTML="";
+  $("veredicto").className="veredicto"; $("seguir").style.display="none";
+  $("cuenta-frenazo").textContent=""; $("responder").style.display="";
+  $("dejar").style.display=""; $("ayuda").textContent="Un solo intento. Si no la ves clara, puedes dejarla y volver luego.";
+  if(ob.tipo==="coef"){
+    $("instruccion").textContent="Halla los coeficientes de la descomposición. Puedes escribir fracciones (por ejemplo 7/3) o decimales.";
+    ob.campos.forEach((c,i)=>{
+      const d=document.createElement("div"); d.className="coef";
+      d.innerHTML='<label for="c'+i+'">'+c+' =</label><input id="c'+i+'" type="text" autocomplete="off">';
+      $("coefs").appendChild(d);
+    });
+  }else{
+    const pedirSust=ob.tipo==="sust";
+    $("instruccion").textContent=pedirSust
+      ? "Primero elige la sustitución correcta, después calcula el valor de la integral definida (4 decimales)."
+      : "Calcula el valor de la integral definida y escríbelo con 4 decimales.";
+    if(pedirSust){
+      mezclar(ob.ops.map((t,i)=>({t,i}))).forEach((o,k)=>{
+        const b=document.createElement("button");
+        b.className="opcion"; b.setAttribute("aria-pressed","false");
+        b.innerHTML='<span class="letra">'+"ABCD"[k]+'</span><span class="mate-op"></span>';
+        b.addEventListener("click",()=>{
+          document.querySelectorAll(".opcion").forEach(x=>x.setAttribute("aria-pressed","false"));
+          b.setAttribute("aria-pressed","true"); S.seleccionOp=o.i;
+        });
+        $("opciones").appendChild(b);
+        tex(b.querySelector(".mate-op"),o.t,false);
+      });
+    }
+    const d=document.createElement("div"); d.className="coef";
+    d.innerHTML='<label for="c0">Valor =</label><input id="c0" type="text" inputmode="decimal" autocomplete="off" placeholder="0,0000">';
+    $("coefs").appendChild(d);
+  }
+  $("panel").classList.add("abierto");
+  setTimeout(()=>{ const p=$("c0"); if(p) p.focus(); },120);
+  $("panel").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+$("responder").addEventListener("click",calificar);
+$("dejar").addEventListener("click",()=>{
+  if(S.estado!=="pregunta") return;
+  $("panel").classList.remove("abierto");
+  S.estado="explorando"; S.invuln=90; S.pospuesta=S.cajaAbriendo;
+  Musica.subir();
+  gritar("La dejaste para después");
+  $("mundo").scrollIntoView({behavior:"smooth",block:"nearest"});
+});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter") return;
+  if(S.estado==="pregunta"){ e.preventDefault(); calificar(); }
+  else if($("seguir").style.display!=="none"&&S.estado!=="fin"){ e.preventDefault(); $("seguir").click(); }
+});
+function calificar(){
+  if(S.estado!=="pregunta") return;
+  const ob=S.obstaculos[S.nivelActual];
+  let correcto=true, motivo="";
+  if(ob.tipo==="coef"){
+    for(let i=0;i<ob.campos.length;i++){
+      const v=leerNumero($("c"+i).value);
+      if(isNaN(v)){ $("ayuda").textContent="Completa todos los coeficientes."; return; }
+      if(Math.abs(v-ob.resp[i])>0.002){ correcto=false; motivo="El coeficiente "+ob.campos[i]+" no coincide."; break; }
+    }
+  }else{
+    if(ob.tipo==="sust"){
+      if(S.seleccionOp===null){ $("ayuda").textContent="Elige primero la sustitución."; return; }
+      if(S.seleccionOp!==ob.correcta){ correcto=false; motivo="La sustitución elegida no corresponde a esa raíz."; }
+    }
+    const v=leerNumero($("c0").value);
+    if(isNaN(v)){ $("ayuda").textContent="Escribe el valor numérico de la integral."; return; }
+    if(correcto){
+      const tol=Math.max(0.0005,Math.abs(ob.resp)*0.005);
+      if(Math.abs(v-ob.resp)>tol){ correcto=false; motivo="El valor numérico no coincide."; }
+    }
+  }
+  resolver(correcto,motivo);
+}
+function resolver(correcto,motivo){
+  const nivel=S.nivelActual, ob=S.obstaculos[nivel], peso=PESOS[nivel];
+  const caja=S.cajaAbriendo;
+  $("responder").style.display="none"; $("dejar").style.display="none";
+  const ver=$("veredicto");
+  ver.className="veredicto abierto "+(correcto?"bien":"mal");
+  const txt=$("veredicto-txt"), mate=$("veredicto-mate"); mate.innerHTML="";
+  caja.abierta=true; caja.estado=correcto?'ok':'mal'; S.abiertas++;
+  E.esc.remove(caja.malla);
+  if(!correcto) E.esc.add(restoCaja(caja.x,caja.z));
+  if(correcto){
+    S.puntos+=peso; Son.romper(); Son.acierto();
+    S.mangos+=5; pintarMangos();
+    $("veredicto-cab").textContent="¡Caja rota! +"+peso+(peso===1?" punto":" puntos")+" y +5 mangos";
+    txt.innerHTML="<p>Sigue explorando: quedan "+(5-S.abiertas)+" cajas.</p>";
+    if(ob.solTex){ const d=document.createElement("div"); mate.appendChild(d); tex(d,ob.solTex,true); }
+    S.historial.push({n:nivel+1,ok:true,pts:peso});
+    actualizarHud();
+    $("seguir").style.display=""; $("seguir").textContent="Volver a la selva";
+    S.estado="listo"; $("seguir").onclick=avanzar;
+  }else{
+    S.vidas=Math.max(0,S.vidas-1);
+    if(S.vidas===0) S.penalizado=true;
+    Son.fallo(); E.sacudida=45;
+    $("flash").classList.add("on"); setTimeout(()=>$("flash").classList.remove("on"),260);
+    $("veredicto-cab").textContent="Aturdido · 0 puntos en esta caja";
+    txt.innerHTML="<p>"+motivo+"</p><p><b>Cómo se resolvía</b></p>";
+    const expl=document.createElement("p"); txt.appendChild(expl); renderMixto(expl,ob.sol);
+    if(ob.solTex){ const d=document.createElement("div"); mate.appendChild(d); tex(d,ob.solTex,true); }
+    S.historial.push({n:nivel+1,ok:false,pts:0});
+    actualizarHud();
+    S.estado="frenazo";
+    let seg=8;
+    const poner=()=>{ $("cuenta-frenazo").textContent=(S.penalizado?"Penalización de equipo aplicada. ":"")+"Te repones en "+seg+" s."; };
+    poner();
+    const t=setInterval(()=>{
+      seg--;
+      if(seg<=0){
+        clearInterval(t); $("cuenta-frenazo").textContent="";
+        $("seguir").style.display=""; $("seguir").textContent="Volver a la selva";
+        S.estado="listo"; $("seguir").onclick=avanzar;
+      }else poner();
+    },1000);
+  }
+}
+function avanzar(){
+  $("panel").classList.remove("abierto");
+  actualizarHud();
+  if(S.abiertas>=5){ setTimeout(()=>terminar("meta"),400); return; }
+  S.estado="explorando"; S.invuln=70; Musica.subir();
+  $("mundo").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+/* ================= CIERRE ================= */
+function terminar(motivo){
+  S.estado="fin"; clearInterval(S.cronometro); Musica.parar();
+  if(motivo==="meta") Son.meta(); else Son.barrido(400,120,0.9,0.16);
+  $("juego").classList.remove("activa"); $("final").classList.add("activa");
+  $("final-puntos").textContent=S.puntos;
+  $("final-titulo").textContent=motivo==="tiempo"?"Se acabó el tiempo":"¡Abriste las cinco cajas!";
+  const usados=Math.round(S.minutos*60-S.segundosRestantes);
+  const mm=Math.floor(usados/60), ss=usados%60;
+  $("final-sub").textContent=S.nombre+" · "+S.equipo+" · Tramo "+S.rama+" · "+mm+" min "+ss+" s en la selva";
+  const tb=$("final-tabla"); tb.innerHTML="";
+  const porNivel={}; S.historial.forEach(h=>porNivel[h.n]=h);
+  for(let i=0;i<5;i++){
+    const h=porNivel[i+1], tr=document.createElement("tr");
+    tr.innerHTML="<td>"+(i+1)+"</td><td>"+NOMBRES_NIVEL[S.rama][i]+"</td><td>"+
+      (h?(h.ok?"Rota":"Aturdido"):"No encontrada")+"</td><td>"+(h?h.pts:0)+"</td>";
+    tb.appendChild(tr);
+  }
+  const linea=document.createElement("tr");
+  linea.innerHTML='<td colspan="2"><b>Expedición</b></td><td>'+S.picadas+' picadas · '+S.golpes+' golpes</td><td>'+S.mangos+' mangos</td>';
+  tb.appendChild(linea);
+  const total=PESOS.reduce((a,b)=>a+b,0);
+  const bruto=[S.nombre,S.equipo,S.rama,S.puntos,total,
+    [0,1,2,3,4].map(i=>porNivel[i+1]?(porNivel[i+1].ok?1:0):"-").join(""),
+    S.penalizado?1:0,usados,S.mangos,S.picadas+S.golpes].join("|");
+  let cod;
+  try{ cod=btoa(unescape(encodeURIComponent(bruto))).replace(/=+$/,"").toUpperCase(); }catch(e){ cod=bruto; }
+  $("final-codigo").textContent=cod.match(/.{1,6}/g).join(" ");
+  $("final-nota").textContent=(S.penalizado
+    ? "Se agotaron los tres aturdimientos: el equipo lleva penalización. "
+    : "Aturdimientos usados: "+(3-S.vidas)+" de 3. ")
+    +"Los mangos no afectan la nota: son el puntaje de expedición.";
+}
+</script>
+</body>
+</html>
