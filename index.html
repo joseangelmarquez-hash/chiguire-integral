@@ -1503,9 +1503,13 @@ function terminar(motivo){
   const bruto=[S.nombre,S.equipo,S.rama,S.puntos,total,
     [0,1,2,3,4].map(i=>porNivel[i+1]?(porNivel[i+1].ok?1:0):"-").join(""),
     S.penalizado?1:0,usados,S.mangos,S.picadas+S.golpes].join("|");
-  let cod;
-  try{ cod=btoa(unescape(encodeURIComponent(bruto))).replace(/=+$/,"").toUpperCase(); }catch(e){ cod=bruto; }
-  $("final-codigo").textContent=cod.match(/.{1,6}/g).join(" ");
+  // Base32 (solo mayúsculas A-Z y dígitos 2-7): se puede dictar y se descifra sin pérdida
+  const B32="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const bytes=new TextEncoder().encode(bruto);
+  let bits=0,val=0,cod="";
+  for(const b of bytes){ val=(val<<8)|b; bits+=8; while(bits>=5){ cod+=B32[(val>>>(bits-5))&31]; bits-=5; } }
+  if(bits>0) cod+=B32[(val<<(5-bits))&31];
+  $("final-codigo").textContent=cod.match(/.{1,5}/g).join(" ");
   $("final-nota").textContent=(S.penalizado
     ? "Se agotaron los tres aturdimientos: el equipo lleva penalización. "
     : "Aturdimientos usados: "+(3-S.vidas)+" de 3. ")
